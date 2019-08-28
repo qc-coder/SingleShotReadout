@@ -12,3 +12,6 @@ def test_function2(s):
     else:
         print 's is zero'
         return None
+
+def hi():
+	print 'hi there from windows workstation'
