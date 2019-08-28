@@ -15,3 +15,5 @@ def test_function2(s):
 
 def hi():
 	print 'hi there from windows workstation'
+	
+print 'it is a new line'
