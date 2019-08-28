@@ -482,7 +482,7 @@ class SSResult:
         print 'Object is created'
 
     ### Process data methods ###
-    def create_norm_data_from_raw(self):
+    def make_norm_data_from_raw(self):
         '''
         Make a normalisation of data on the axis between g_mean and e_mean values
         Write new data as object parameters
@@ -603,7 +603,7 @@ class SSResult:
         ###---
         ##########______NORMALIZE IF NECESSARY_____#############################
         if (self.x_g is None) or (self.x_e is None):
-            self.create_norm_data_from_raw()
+            self.make_norm_data_from_raw()
 
         ##########______THRESHOLD_____##########################################
         ### Find best threshold value ###
@@ -619,13 +619,13 @@ class SSResult:
         self.sign_ge = dict_count['sign_ge']
         return threshold
 
-    def reset_x_threshold_tobe_zero(self):
+    def shift_x_to_threshold_be_zero(self):
         '''
         Search the best threshold value and shift the data on it
         returns threshold value, that was founded and used for shift
         '''
         if (self.x_g is None) or (self.x_e is None):
-            print 'Warning! create_postselected_data_from_norm(); no data to postselect'
+            print 'Warning! make_postselected_data_from_norm(); no data to postselect'
             return False
 
         if self.threshold == 0:
@@ -664,7 +664,7 @@ class SSResult:
 
         return True
 
-    def create_postselected_data_from_norm(self):
+    def make_postselected_data_from_norm(self):
         '''
         Do the postselection. Threshold usually=0 because we did set_best_threshold_as_zero() before
         '''
@@ -672,11 +672,11 @@ class SSResult:
         threshold = self.threshold
 
         if (self.x_g is None) or (self.x_e is None) or (self.x_g_pre is None) or (self.x_e_pre is None):
-            print 'Warning! create_postselected_data_from_norm(); no data to postselect'
+            print 'Warning! make_postselected_data_from_norm(); no data to postselect'
             return False
 
         if ( len(self.x_g) != len(self.x_g_pre) ) or ( len(self.x_e) != len(self.x_e_pre) ):
-            print 'Warning! Size is not the same  create_postselected_data_from_norm()'
+            print 'Warning! Size is not the same  make_postselected_data_from_norm()'
             return False
 
 
@@ -719,20 +719,18 @@ class SSResult:
 
         return [index_g_wrong, index_e_wrong]
 
-
-
-    def calculate_fidelity_post_v(self):
+    def calculate_fidelity_post(self):
         '''
         New version of fidelity calculator.
         Smart threshold by default (no fit, just bruteforce)
         '''
         ########___DO NORMALIZATION IF HAVE NOT DONE YET___#####################
         if (self.x_g is None) or (self.x_e is None):
-            self.create_norm_data_from_raw()
+            self.make_norm_data_from_raw()
 
         ### Set best threshold as a zero ###
         self.set_best_threshold()
-        self.reset_x_threshold_tobe_zero()
+        self.shift_x_to_threshold_be_zero()
 
         ### count states with this threshold ###
         self.dict_count = get_count_states(self.x_g, self.x_e, 0)
@@ -741,7 +739,7 @@ class SSResult:
         p_eg = self.dict_count['p_eg']
         p_ee = self.dict_count['p_ee']
         ### do the postselection ###
-        self.create_postselected_data_from_norm()
+        self.make_postselected_data_from_norm()
 
         ### count states with postselection ###
         self.dict_count_select = get_count_states(self.x_g_select, self.x_e_select, 0)
@@ -772,7 +770,7 @@ class SSResult:
 
         if renorm:
             if (self.x_g is None) or (self.x_e is None):
-                self.create_norm_data_from_raw()    ### do renormalization
+                self.make_norm_data_from_raw()    ### do renormalization
             void_re_mv = self.x_void_mv
             void_im_mv = self.y_void_mv
             re_g     = self.x_g
@@ -1033,7 +1031,7 @@ class SSResult:
         Takes two* ndarrays of data
         '''
         if (self.x_g is None) or (self.x_e is None):
-            self.create_norm_data_from_raw()    ### do renormalization
+            self.make_norm_data_from_raw()    ### do renormalization
 
         #### data extraction ###
         void_re_mv = self.x_void_mv
@@ -1267,7 +1265,7 @@ class SSResult:
             return f_ro
 
         if (self.x_g is None) or (self.x_e is None):
-            self.create_norm_data_from_raw()
+            self.make_norm_data_from_raw()
         x_g = self.x_g
         x_e = self.x_e
 
