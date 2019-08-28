@@ -1,0 +1,45 @@
+# Filename: 192644_parameters_Fidelity190722_192644.dat
+# Timestamp: Mon Jul 22 19:26:44 2019
+
+# Column 1:
+#	name: freq_read
+#	type: value
+#	units: us
+# Column 2:
+#	name: power1
+#	type: value
+#	units: us
+# Column 3:
+#	name: t_read
+#	type: value
+#	units: us
+# Column 4:
+#	name: rudat
+#	type: value
+#	units: us
+# Column 5:
+#	name: freq_q
+#	type: value
+#	units: us
+# Column 6:
+#	name: power2
+#	type: value
+#	units: us
+# Column 7:
+#	name: rudat2
+#	type: value
+#	units: us
+# Column 8:
+#	name: tpi
+#	type: value
+#	units: us
+# Column 9:
+#	name: nsigma
+#	type: value
+#	units: us
+# Column 10:
+#	name: cur
+#	type: value
+#	units: us
+
+7.030500000000e+00	-0.000000000000e+00	3.200000000000e-08	1.600000000000e+01	6.296028000000e+00	-1.800000000000e-01	7.000000000000e+00	3.000000000000e-08	1.800000000000e+00	5.000000000000e-04

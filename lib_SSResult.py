@@ -1,0 +1,1299 @@
+import numpy as np
+from matplotlib import pyplot as plt
+
+################################################################################
+### My Design ###
+my_colors_dict = {  'redberry'      :'#970000',
+                    'tamarillo'     :'#8b1212',
+                    'venetianred'   :'#770023',
+                    'monarch'       :'#850731',
+                    'toledo'        :'#40001b',
+                    'shipgrey'      :'#423B4B',
+                    'charde'        :'#20202c',
+                    'woodsmoke'     :'#171719',
+                    'mediumpurple'  :'#795FD7',
+                    'curciousblue'  :'#2f99e2',
+                    'electric'      :'#795fd7',
+                    'deus_ex_gold'  :'#eda723',
+                    'meduza'        :'#b5895b',
+                    'meduza_gold'   :'#B5965B',
+                    'blob_g'        :'#546ea9',
+                    'blob_e'        :'#fd6e6e',
+                    'blob_post'     :'#1b346e',
+                    'g_state_mark'  :'#849cd4',
+                    'e_state_mark'  :'#fe9393'
+
+}
+
+def set_font(filename='Forza-Book.ttf'):
+    '''
+    Takes the name of file.ttf
+    File must be in folder of
+    Python27\Lib\site-packages\matplotlib\mpl-data\fonts\ttf
+    return prop
+    wich could be use as in an example:
+    ax.set_title('This is a special font: {}'.format(fname), fontproperties=prop)
+    fontproperties = set_font('Forza-Book.ttf')
+    '''
+    ## special font from ttf
+    ###+===============================######
+    import os
+    from matplotlib import font_manager as fm, rcParams
+
+    str_adress_name = "fonts/ttf/" + filename
+
+    fpath = os.path.join(rcParams["datapath"], str_adress_name)
+    prop = fm.FontProperties(fname=fpath)
+    # fname = os.path.split(fpath)[1]
+
+    return prop
+################################################################################
+
+################################################################################
+### This needs only for fit the hists (maybe future) ###
+def sameside(a,b, ref=0):
+    '''
+    if ref = 0
+    return True if a and b has a same sign
+    for different ref return True if a and b on the one side from ref
+    '''
+    if (a == ref) or (b==ref):
+        return True
+    a_sign = a > ref
+    b_sign = b > ref
+    if a_sign == b_sign:
+        return True
+    else:
+        return False
+
+def where_sameside(a_arr, b, ref=0):
+    '''
+    a_arr = array, b =value_to_compare_with, and ref = reference value
+    Returns array of booleans:
+    True - on positions where value of both arrays have same side to ref
+    False where side is different
+    '''
+    result_array = np.zeros(len(a_arr))
+    for i in range(len(a_arr)):
+        result_array[i] = sameside(a_arr[i] ,b, ref=ref)
+
+    return result_array
+################################################################################
+
+################################################################################
+### math functions ###
+def complex_num_relationships(re1,im1,re2,im2):
+    '''
+    return distance and angle between two complex numbers
+    tekes re and im of both numbers
+    '''
+    c1 = re1 + 1j*im1
+    c2 = re2 + 1j*im2
+    theta = np.angle(c2-c1, deg=True)
+    distance = np.sqrt( (re2-re1)**2 + (im2-im1)**2  )
+
+    return [distance, theta]
+
+def angle_three_points(x1,y1,x2,y2,x3,y3):
+    '''
+    Find an angle between three points.
+    Takes 6 coordinats <ABC
+    return angle in grad
+    '''
+
+    [dist, theta12] = complex_num_relationships(x2,y2,x1,y1)
+    if theta12 < 0:
+        theta12 = 360 + theta12
+    [dist, theta23] = complex_num_relationships(x3,y3,x2,y2)
+    if theta23 < 0:
+        theta23 = 360 + theta23
+
+    angle = theta23 - theta12 - 180
+
+     # to be always in range [-360:360]
+    if angle> 0:
+        angle = angle % 360
+    else:
+        angle = -angle % 360
+        angle = -angle
+
+    return angle
+
+def change_basis_point(x,y, x0, y0, theta):
+    '''
+    Change the basis of one point.
+    takes coordinates of one point and bassis as [x0,y0, theta(grad)]
+    return coordinatees in a new basis
+    '''
+    #convert theta to radians
+    theta = np.radians(theta)
+
+    ### shift the point
+    x1 = x -x0
+    y1 = y -y0
+
+    ### rotate the vector clockwise
+    x2 =  x1*np.cos(theta) + y1*np.sin(theta)
+    y2 = -x1*np.sin(theta) + y1*np.cos(theta)
+
+    return [x2,y2]
+
+def change_basis_blobs_inf(x0, y0, theta, *args_datapairs):
+    '''
+    change basis of all sequence
+    takes x0,y0 and theta of a new basis
+    AND  few of ndarrays of points in shape [x0_arr, y0_arr], [x1_arr, y1_arr], ...[xn_arr, yn_arr]
+    returns few of ndarrays of points in New Basis in shape of list of lists of arrays: [  [x0_arr, y0_arr], [...], ... [xn_arr, yn_arr] ]
+    (theta in degrees)
+    '''
+    result_list = []
+
+    for data_pair in args_datapairs:
+        data_x = data_pair[0]
+        data_y = data_pair[1]
+        if len(data_x) != len(data_y):
+            print '___WARNING change_basis_blobs_inf() not the same length of arrays!'
+
+        #for each given sequence - do the basis changing
+        data_x_norm = np.ones_like(data_x)  #prepare empty array
+        data_y_norm = np.ones_like(data_y)
+
+        # for i in range(len(re_g)):
+        for i in range(len(data_x)):
+            [ data_x_norm[i], data_y_norm[i] ] = change_basis_point(data_x[i], data_y[i], x0, y0, theta)    #g state
+
+        data_norm = [data_x_norm, data_y_norm]
+        result_list.append(data_norm)   #add sequence in a new basis to the list
+
+    return result_list
+
+def centers_two_blobs(re_g, im_g, re_e, im_e, simple_mean=True):
+    '''
+    Searching the centers of two blobs on i-q plane
+    Takes ndarrays of Re_g, Im_g, Re_e, Im_e
+    return coordinates of center list = [c_re_g, c_im_g, c_re_e, c_im_e]
+    '''
+    c_re_g = np.mean(re_g)
+    c_im_g = np.mean(im_g)
+    c_re_e = np.mean(re_e)
+    c_im_e = np.mean(im_e)
+
+    return [c_re_g, c_im_g, c_re_e, c_im_e ]
+
+def crop_fluctuations(re_g, im_g, re_e,im_e, void_re, void_im, coeff_shift = 2.0, crop=True):
+    '''
+    takes re_g, im_g, re_e, im_e data
+    finds the main area
+    returns values of limits [leftlim, rightlim, toplim, bottomlim]
+    coeff_shift - how many std-values shift from mean-value
+    '''
+    if crop:
+        ## for X axis
+        re_g_m = np.mean(re_g)     #mean value of g
+        re_g_d = np.std(re_g)       #dispersion value of g
+        re_e_m = np.mean(re_e)
+        re_e_d = np.std(re_e)
+        ## for Y axis
+        im_g_m = np.mean(im_g)     #mean value of g
+        im_g_d = np.std(im_g)       #dispersion value of g
+        im_e_m = np.mean(im_e)
+        im_e_d = np.std(im_e)
+        ### possible X(re) limits
+        re1 = re_g_m + re_g_d * coeff_shift
+        re2 = re_g_m - re_g_d * coeff_shift
+        re3 = re_e_m + re_e_d * coeff_shift
+        re4 = re_e_m - re_e_d * coeff_shift
+        ### possible Y(im) limits
+        im1 = im_g_m + im_g_d * coeff_shift
+        im2 = im_g_m - im_g_d * coeff_shift
+        im3 = im_e_m + im_e_d * coeff_shift
+        im4 = im_e_m - im_e_d * coeff_shift
+
+        leftlim = np.min([ re1,re2,re3,re4, 0, void_re])
+        rightlim = np.max([ re1,re2,re3,re4, 0, void_re ])
+        toplim = np.max([ im1,im2,im3,im4, 0, void_im ])
+        bottomlim = np.min([ im1,im2,im3,im4, 0, void_im ])
+    else:
+        leftlim = np.min([ re_e, re_g, 0 ])
+        rightlim = np.max([ re_e, re_g, 0 ])
+        toplim = np.max([ im_e, im_g, 0 ])
+        bottomlim = np.min([ im_e, im_g, 0 ])
+
+    return [leftlim, rightlim, toplim, bottomlim]
+
+def get_count_states(x_g, x_e, threshold):
+    '''
+    Function to count number of values according to threshold
+    Returns dictionary
+    n_left_g = number elements x_g less than threshold
+    n_left_e = number elements x_e less than threshold
+    n_right_g = number elements x_g more than threshold
+    n_right_e = number elements x_e more than threshold
+    p_left_g -probabilities
+    p_left_e
+    p_right_g
+    p_right_e
+    sighn_ge - +1 if g less than e; or -1 if g more than e
+    '''
+    def e_morethan_g(p_left_g, p_left_e, p_right_g, p_right_e):
+        '''
+        Function for define where is g state and where is e state relative to the threshold
+        Takes probabilities of g and e states to be on the left and right parts
+        Returns True if |e> > |g>, and False if |g> > |e>
+        '''
+        if (p_left_g > p_right_g) and (p_left_e < p_right_e):
+            return True
+        elif (p_left_g < p_right_g) and (p_left_e > p_right_e):
+            return False
+        elif (p_left_g > p_right_g) and (p_left_e > p_right_e):
+            if p_left_g > p_left_e:
+                return True
+            else:
+                return False
+        elif (p_left_g < p_right_g) and (p_left_e < p_right_e):
+            if p_left_g > p_left_e:
+                return True
+            else:
+                return False
+
+    #calculate how many g points are less or more than threshold value
+    n_left_g  = 0
+    n_right_g = 0
+    for val in x_g:
+        if val < threshold:
+            n_left_g  +=1
+        else:
+            n_right_g +=1
+    #calculate how many e points are less or more than threshold value
+    n_left_e  = 0
+    n_right_e = 0
+    for val in x_e:
+        if val < threshold:
+            n_left_e  +=1
+        else:
+            n_right_e +=1
+    #probabilities of g or e states been bigger or smaller than threshold
+    #### DO YOU REALLY NEED PROBABILITIES NOW?
+    p_left_g = 1.0*n_left_g / len(x_g)
+    p_left_e = 1.0*n_left_e / len(x_e)
+    p_right_g = 1.0*n_right_g / len(x_g)
+    p_right_e = 1.0*n_right_e / len(x_e)
+
+    ### sign ###
+    # check where is e and where is g. Define P_ij
+    if e_morethan_g(p_left_g, p_left_e, p_right_g, p_right_e):
+        sign = +1
+        p_gg = p_left_g
+        p_ee = p_right_e
+        p_ge = p_left_e # P to measure e when g was prepared
+        p_eg = p_right_g # P to measure g when e was prepared
+    else:
+        sign = -1
+        p_gg = p_left_e
+        p_ee = p_right_g
+        p_ge = p_right_e # P to measure e when g was prepared
+        p_eg = p_left_g # P to measure g when e was prepared
+
+    dict_count = {
+    'n_left_g'  :   n_left_g,
+    'n_left_e'  :   n_left_e,
+    'n_right_g' :   n_right_g,
+    'n_right_e' :   n_right_e,
+    'p_left_g'  :   p_left_g,
+    'p_left_e'  :   p_left_e,
+    'p_right_g' :   p_right_g,
+    'p_right_e' :   p_right_e,
+    'sign_ge'   :   sign,
+    'p_gg'      :   p_gg,
+    'p_ee'      :   p_ee,
+    'p_ge'      :   p_ge,   # P to measure e when g was prepared
+    'p_eg'      :   p_eg,   # P to measure g when e was prepared
+    }
+
+    return dict_count
+
+################################################################################
+
+################################################################################
+class SSResult:
+    '''
+    This class is linked with one single-shot measurements.
+    Data takes only from file during inizialization.
+    Contains re and im parts of measured g and e states and also of two pre-measurements
+    '''
+    ### Raw Data ###
+    void_re_mv = 0
+    void_im_mv = 0
+    re_g     = np.array([])
+    im_g     = np.array([])
+    re_e     = np.array([])
+    im_e     = np.array([])
+    re_g_pre = np.array([])
+    im_g_pre = np.array([])
+    re_e_pre = np.array([])
+    im_e_pre = np.array([])
+
+    ### Processed Data ###
+    x_void_mv = 0
+    y_void_mv = 0
+    x_g         = None
+    x_e         = None
+    x_g_pre     = None
+    x_e_pre     = None
+    x_g_select  = None
+    x_e_select  = None
+    y_g         = None
+    y_e         = None
+    y_g_pre     = None
+    y_e_pre     = None
+    y_g_select  = None
+    y_e_select  = None
+
+    ### Histograms ###
+    # ## do we need histograms of re and im? (no)
+    # x_g_hist         = None
+    # x_e_hist         = None
+    # x_g_pre_hist     = None
+    # x_e_pre_hist     = None
+    # x_g_select_hist  = None
+    # x_e_select_hist  = None
+
+    ###### MetaData ######
+    datafile = ''
+    paramfile = ''
+    timestamp = ''
+
+    threshold = 0
+    sign_ge = 1     #COULD BE +-1 depends on g>e or e>g
+
+    ### Parameters #######
+    dict_param = {
+    'freq_read':0, 'power1':0, 't_read':0, 'rudat':0, 'freq_q':0,
+     'power2':0, 'rudat2':0, 'tpi':0, 'nsigma':0, 'cur':0
+     }
+    ### Results ##########
+    ### Count states ###
+    dict_count = {
+    'n_left_g'  : 0,    'n_left_e'  : 0,
+    'n_right_g' : 0,    'n_right_e' : 0,
+    'p_left_g'  : 0,    'p_left_e'  : 0,
+    'p_right_g' : 0,    'p_right_e' : 0,
+    'sign_ge'   : 0,
+    'p_gg'      : 0,    'p_ee'      : 0,
+    'p_ge'      : 0,    'p_eg'      : 0,
+    }
+    ### Count states after postselection ###
+    dict_count_select = {
+    'n_left_g'  : 0,    'n_left_e'  : 0,
+    'n_right_g' : 0,    'n_right_e' : 0,
+    'p_left_g'  : 0,    'p_left_e'  : 0,
+    'p_right_g' : 0,    'p_right_e' : 0,
+    'sign_ge'   : 0,
+    'p_gg'      : 0,    'p_ee'      : 0,
+    'p_ge'      : 0,    'p_eg'      : 0,
+    }
+    ### Fidelity dictionary ###
+    dict_fidelity = {
+    'F':0, 'F_g':0, 'F_e':0, 'F_post':0,'F_post_g':0, 'F_post_e':0,
+     'F_gaus':0, 'F_gaus_eg':0,'F_gaus_ge':0, 'Err_e':0, 'Err_g':0
+    }
+
+
+    ############################################################################
+    #### Methods ###############################################################
+
+    def __init__(self, datafile, paramfile=''):
+
+        def get_timestamp(filename):
+            '''
+            function just to take string of time of measurement from file
+            '''
+            timestr = ''
+            try:
+                #opening file
+                f = open(filename, "r")
+                lines = f.readlines()
+                f.close()
+            except:
+                print 'Error! get_timestamp() can not open the file'
+                return None
+
+            timestr = lines[1]
+            timestr = timestr[13:-1]
+
+            return timestr
+
+        def get_parameters(filename):
+            '''
+            Takes file of parameters and extract parameters values. Returns dictionary.
+            '''
+            par_dict = {'freq_read':0, 'power1':0, 't_read':0, 'rudat':0, 'freq_q':0, 'power2':0, 'rudat2':0, 'tpi':0, 'nsigma':0, 'cur':0}
+            NUM_OF_VALUES = 10
+            #opening file
+            try:
+                f = open(filename, "r")
+                lines = f.readlines()
+                f.close()
+            except:
+                print 'Can not read the file'
+                return par_dict
+
+            # extract numbers from string one by one
+            string = lines[44]
+            list_of_values_str = []
+            for i in range(NUM_OF_VALUES):
+                ## it is 9 parameters to read
+                cut_end = string.find('\t')
+                str = string[ 0: cut_end ]
+                list_of_values_str.append(float(str))
+                string = string[ cut_end+1 : ]
+
+            #fulfill dictionary and return
+            par_dict['freq_read'] = list_of_values_str[0]
+            par_dict['power1'] =    list_of_values_str[1]
+            par_dict['t_read'] =    list_of_values_str[2]
+            par_dict['rudat']  =    list_of_values_str[3]
+            par_dict['freq_q'] =    list_of_values_str[4]
+            par_dict['power2'] =    list_of_values_str[5]
+            par_dict['rudat2'] =    list_of_values_str[6]
+            par_dict['tpi']    =    list_of_values_str[7]
+            par_dict['nsigma'] =    list_of_values_str[8]
+            par_dict['cur']    =    list_of_values_str[9]
+
+            return par_dict
+
+        self.datafile = datafile
+        self.timestamp = get_timestamp(datafile)
+
+        raw_data_ss = np.loadtxt(datafile)
+        self.re_g     = raw_data_ss[:,0]
+        self.im_g     = raw_data_ss[:,1]
+        self.re_e     = raw_data_ss[:,2]
+        self.im_e     = raw_data_ss[:,3]
+        self.re_g_pre = raw_data_ss[:,4]
+        self.im_g_pre = raw_data_ss[:,5]
+        self.re_e_pre = raw_data_ss[:,6]
+        self.im_e_pre = raw_data_ss[:,7]
+
+        self.paramfile = paramfile
+        self.dict_param = get_parameters(paramfile)
+        # self.dict_fidelity = self.calculate_fidelity_post(smrt_thrshd=True)
+
+        print 'Object is created'
+
+    ### Process data methods ###
+    def create_norm_data_from_raw(self):
+        '''
+        Make a normalisation of data on the axis between g_mean and e_mean values
+        Write new data as object parameters
+        Returns True if finished
+        '''
+        re_g = self.re_g
+        im_g = self.im_g
+        re_e = self.re_e
+        im_e = self.im_e
+        ### ----
+        re_g_pre = self.re_g_pre
+        im_g_pre = self.im_g_pre
+        re_e_pre = self.re_e_pre
+        im_e_pre = self.im_e_pre
+
+        ##########______NORMALIZATION________###################################
+        ### find centers of blobs
+        [c_re_g, c_im_g, c_re_e, c_im_e ] = centers_two_blobs(re_g, im_g, re_e, im_e)
+
+        ### find angle 2*alpha (angle between two blolbs according to void-state)
+        angle_between_blobs = angle_three_points(c_re_g,c_im_g, self.void_re_mv,self.void_im_mv, c_re_e,c_im_e)
+
+        ### find distance and theta between this centers
+        [dist, theta] = complex_num_relationships(c_re_g,c_im_g,c_re_e,c_im_e)      #extract theta
+        threshold_re = np.mean([c_re_g, c_re_e])  #x0
+        threshold_im = np.mean([c_im_g, c_im_e])  #y0
+
+        ### change the basis according to positions of blobs centers
+        [ [re_g, im_g], [re_e, im_e] ]                      = change_basis_blobs_inf(threshold_re, threshold_im, theta, [re_g, im_g] , [re_e, im_e] )
+        [ [re_g_pre, im_g_pre],  [re_e_pre, im_e_pre] ]     = change_basis_blobs_inf(threshold_re, threshold_im, theta, [re_g_pre, im_g_pre] , [re_e_pre, im_e_pre] )
+
+        # normalize VOID state
+        [void_re_mv,void_im_mv]                             = change_basis_point(self.void_re_mv, self.void_im_mv, threshold_re, threshold_im, theta)
+
+        ########_____SAVING____________#########################################
+        self.x_void_mv      = void_re_mv
+        self.y_void_mv      = void_im_mv
+        self.x_g            = re_g
+        self.x_e            = re_e
+        self.x_g_pre        = re_g_pre
+        self.x_e_pre        = re_e_pre
+        self.y_g            = im_g
+        self.y_e            = im_e
+        self.y_g_pre        = im_g_pre
+        self.y_e_pre        = im_e_pre
+
+        print 'data was normalised and saved'
+        return True
+
+    def set_best_threshold(self):
+        '''
+        Find best threshold,
+        set it t oobject
+        and return it
+        '''
+        ###---
+        def get_best_threshold(x_g, x_e, th0, delta0, permiss=1e-4, fragment=40, previous_fid=None):
+            '''
+            Searching for best value of threshold
+            Bruteforce method
+            permiss - permissiable value
+            '''
+            def get_fro_vs_threshold(x_g, x_e, threshold):
+                '''
+                Simplest function to calculate only f_ro for given threshold value
+                Calculate fidelity for given value of THRESHOLD
+                Takes 1D arrays of normalized g and e results. ( re_g & re_e )
+                return only value of f_ro = 1. - 0.5*(p_ge + p_eg)
+                '''
+                dict_count = get_count_states(x_g,x_e,threshold)
+                p_ge = dict_count['p_ge']
+                p_eg = dict_count['p_eg']
+                f_ro = 1. - 0.5*(p_ge + p_eg)
+                return f_ro
+
+            # th_min = th0-delta0
+            # th_max = th0+delta0
+            # step = (th_max - th_min)/fragment
+            # thresholds = np.arange(th_min, th_max, step)
+            #
+            thresholds = np.linspace(th0-delta0, th0+delta0, fragment)
+
+
+            fids_list = []
+            for th in thresholds:
+                fid = get_fro_vs_threshold(x_g, x_e, th)
+                fids_list.append(fid)
+
+            arg_best = np.argmax(fids_list)
+            best_th  = thresholds[ arg_best ]
+
+            if (arg_best > 0):
+                left_th  = thresholds[ arg_best -1 ]
+            else:
+                left_th  = best_th
+
+            if (arg_best < len(thresholds)-1):
+                right_th = thresholds[ arg_best +1 ]
+            else:
+                right_th = best_th
+
+            best_fid  = get_fro_vs_threshold(x_g, x_e, best_th)
+            left_fid  = get_fro_vs_threshold(x_g, x_e, left_th)
+            right_fid = get_fro_vs_threshold(x_g, x_e, right_th)
+
+            if previous_fid is not None:
+                if abs(previous_fid - best_fid) < permiss:
+                    return best_th
+
+            print 'arg best:', arg_best
+            print 'best fidelity: ', best_fid
+
+            if abs(best_fid - left_fid) > permiss  or  abs(best_fid - right_fid) > permiss:
+                # recursion here
+                print 'ONE MORE ITTERATION'
+                best_th = get_best_threshold(x_g, x_e, best_th, delta0/10, permiss=permiss, previous_fid=best_fid)
+            return best_th
+        ###---
+        ##########______NORMALIZE IF NECESSARY_____#############################
+        if (self.x_g is None) or (self.x_e is None):
+            self.create_norm_data_from_raw()
+
+        ##########______THRESHOLD_____##########################################
+        ### Find best threshold value ###
+        [leftlim, rightlim, rabbish1, rabbish2 ] = crop_fluctuations(self.x_g, [0] , self.x_e, [0], 0, 0 )
+        delta = abs(rightlim - leftlim)
+
+        threshold = get_best_threshold(self.x_g, self.x_e, 0, delta, permiss=1e-4)
+        print 'threshold:', threshold
+
+        ##########______SET AND RETURN_____#####################################
+        self.threshold = threshold
+        dict_count = get_count_states(self.x_g,self.x_e, threshold)
+        self.sign_ge = dict_count['sign_ge']
+        return threshold
+
+    def reset_x_threshold_tobe_zero(self):
+        '''
+        Search the best threshold value and shift the data on it
+        returns threshold value, that was founded and used for shift
+        '''
+        if (self.x_g is None) or (self.x_e is None):
+            print 'Warning! create_postselected_data_from_norm(); no data to postselect'
+            return False
+
+        if self.threshold == 0:
+            print 'Its already == 0'
+            return True
+
+        ###  NOW SHIFT THE NORMALIZED DATA FOR THRESHOLD TO BE ZERO ###
+
+        threshold = self.threshold
+
+        def shifter(arr, value):
+            '''
+            This function just shift a given array on given value
+            '''
+            new_arr = np.zeros_like(arr)
+            for i in range(len(arr)):
+                new_arr[i] = arr[i] - value
+            return new_arr
+
+        self.x_g = shifter(self.x_g, threshold)
+        self.x_e = shifter(self.x_e, threshold)
+
+        if self.x_g_pre is not None:
+            self.x_g_pre = shifter(self.x_g_pre, threshold)
+        if self.x_e_pre is not None:
+            self.x_e_pre = shifter(self.x_e_pre, threshold)
+
+        if self.x_g_select is not None:
+            self.x_g_select = shifter(self.x_g_select, threshold)
+        if self.x_e_select is not None:
+            self.x_e_select = shifter(self.x_e_select, threshold)
+
+        [self.x_void_mv] = shifter([self.x_void_mv], threshold)
+
+        self.threshold = 0
+
+        return True
+
+    def create_postselected_data_from_norm(self):
+        '''
+        Do the postselection. Threshold usually=0 because we did set_best_threshold_as_zero() before
+        '''
+
+        threshold = self.threshold
+
+        if (self.x_g is None) or (self.x_e is None) or (self.x_g_pre is None) or (self.x_e_pre is None):
+            print 'Warning! create_postselected_data_from_norm(); no data to postselect'
+            return False
+
+        if ( len(self.x_g) != len(self.x_g_pre) ) or ( len(self.x_e) != len(self.x_e_pre) ):
+            print 'Warning! Size is not the same  create_postselected_data_from_norm()'
+            return False
+
+
+        x_g_selected = np.array([])
+        x_e_selected = np.array([])
+        index_g_wrong = []
+        index_e_wrong = []
+
+        # ## can be exchanged:
+        # ind1 = np.where(Re_post > threshold)
+        # Re_postselected = np.delete(Re, ind1)
+        def g_state(val, threshold, sign_ge):
+            if sign_ge > 0:
+                if val > threshold:
+                    return False
+                else:
+                    return True
+            else:
+                if val > threshold:
+                    return True
+                else:
+                    return False
+
+        for i in range(len(self.x_g)):
+        #    if sameside(  self.x_g[i], self.x_g_pre[i], ref=threshold  ):
+            if g_state(self.x_g_pre[i], self.threshold, self.sign_ge):
+                x_g_selected = np.append(x_g_selected, self.x_g[i])
+            else:
+                index_g_wrong.append(i)
+
+        for i in range(len(self.x_e)):
+            #if not sameside(  self.x_e[i], self.x_e_pre[i], ref=threshold  ):
+            if g_state(self.x_e_pre[i], self.threshold, self.sign_ge):
+                x_e_selected = np.append(x_e_selected, self.x_e[i])
+            else:
+                index_e_wrong.append(i)
+
+        self.x_g_select = x_g_selected
+        self.x_e_select = x_e_selected
+
+        return [index_g_wrong, index_e_wrong]
+
+
+
+    def calculate_fidelity_post_v(self):
+        '''
+        New version of fidelity calculator.
+        Smart threshold by default (no fit, just bruteforce)
+        '''
+        ########___DO NORMALIZATION IF HAVE NOT DONE YET___#####################
+        if (self.x_g is None) or (self.x_e is None):
+            self.create_norm_data_from_raw()
+
+        ### Set best threshold as a zero ###
+        self.set_best_threshold()
+        self.reset_x_threshold_tobe_zero()
+
+        ### count states with this threshold ###
+        self.dict_count = get_count_states(self.x_g, self.x_e, 0)
+        p_gg = self.dict_count['p_gg']
+        p_ge = self.dict_count['p_ge']
+        p_eg = self.dict_count['p_eg']
+        p_ee = self.dict_count['p_ee']
+        ### do the postselection ###
+        self.create_postselected_data_from_norm()
+
+        ### count states with postselection ###
+        self.dict_count_select = get_count_states(self.x_g_select, self.x_e_select, 0)
+        p_gg_post = self.dict_count_select['p_gg']
+        p_ge_post = self.dict_count_select['p_ge']
+        p_eg_post = self.dict_count_select['p_eg']
+        p_ee_post = self.dict_count_select['p_ee']
+
+        f_ro = 1. - 0.5*(p_ge + p_eg)
+        f_g  = 1. - p_ge    #fid of preparation |g> state
+        f_e  = 1. - p_eg
+
+        f_ro_post = 1. - 0.5*(p_ge_post + p_eg_post)
+        f_g_post  = 1. - p_ge_post
+        f_e_post  = 1. - p_eg_post
+
+
+
+        #### TEMPORARY RETURN FAST ###
+        return f_ro
+
+    ### Drawing methods ###
+    def plot_scatter_two_blob(self, centers=None, save=False, fname='Two_blob', savepath='', show=False, limits=[None,None,None,None], crop=True, fig_transp = False, normalized=False, dark=False, title_str=None, font=None, zero_on_plot=False, renorm=False):
+        '''
+        Plots diagramm of scattering for two blobs on the i-q plane
+        returns limits of axis (it is used for histograms)
+        '''
+
+        if renorm:
+            if (self.x_g is None) or (self.x_e is None):
+                self.create_norm_data_from_raw()    ### do renormalization
+            void_re_mv = self.x_void_mv
+            void_im_mv = self.y_void_mv
+            re_g     = self.x_g
+            im_g     = self.y_g
+            re_e     = self.x_e
+            im_e     = self.y_e
+            re_g_p = self.x_g_pre
+            im_g_p = self.y_g_pre
+            re_e_p = self.x_e_pre
+            im_e_p = self.y_e_pre
+        else:
+            void_re_mv = self.void_re_mv
+            void_im_mv = self.void_im_mv
+            re_g     = self.re_g
+            im_g     = self.im_g
+            re_e     = self.re_e
+            im_e     = self.im_e
+            re_g_p = self.re_g_pre
+            im_g_p = self.im_g_pre
+            re_e_p = self.re_e_pre
+            im_e_p = self.im_e_pre
+        ### SET CUSTOM FONT ###
+        #1
+        # plt.rc('font', family = 'DejaVuSans')
+        ###-----------------###
+        #2
+        if font is None:
+            plt.rc('font', family = 'Verdana')
+        # fontproperties = font
+        ### ##############T ###
+
+        #### custom colors #3
+        if dark:
+            color_g = my_colors_dict['blob_g']
+            color_e = my_colors_dict['blob_e']
+            transpcy=3e-2
+            markersize = 15   #None - by default
+                ### centers of clouds
+            # color_g_mean = '#795fd7'
+            color_g_mean = my_colors_dict['g_state_mark']
+            color_e_mean = my_colors_dict['e_state_mark']
+            color_dist =    my_colors_dict['deus_ex_gold']
+            vector_bw_blobs = 0.7
+                ### vectors from void_point to centers
+            color_g_vector = my_colors_dict['deus_ex_gold']
+            color_e_vector = my_colors_dict['deus_ex_gold']
+            vector_state_lw = 0.7
+                ### zero points
+            color_void = my_colors_dict['deus_ex_gold']
+            color_zero = my_colors_dict['meduza_gold']
+            color_zero_vector = my_colors_dict['meduza_gold']
+            vector_zero_lw = 0.5
+                ### background of image
+            fig_face_color = '#262626' #this does not work
+            fig_border_color = 'r'
+            bg_color = 'k'
+            grid_color =  my_colors_dict['meduza_gold']
+            grid_transp = 0.5
+            title_color = my_colors_dict['meduza_gold']
+            legend_color = '#262626'
+            legend_text_color = my_colors_dict['meduza_gold']
+            legend_alpha = 0.7
+            legend_frame_color = my_colors_dict['meduza_gold']
+
+
+            AXES_COLOR = my_colors_dict['meduza_gold']
+            import matplotlib as mpl
+            mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
+            mpl.rc('xtick', color=AXES_COLOR)
+            mpl.rc('ytick', color=AXES_COLOR)
+            mpl.rc('grid', color=AXES_COLOR)
+        else:
+            color_g = 'b'
+            color_e = 'r'
+            color_g_mean = 'midnightblue'
+            color_e_mean = 'maroon'
+            frame_color = 'white'
+            bg_color = 'white'
+            grid_color = 'lightgrey'
+            color_dist = 'gold'
+            color_zero = 'k'
+            grid_transp=None
+
+            color_g = 'b'
+            color_e = 'r'
+            transpcy=2.5e-2
+            markersize = None   #None - by default
+                ### centers of clouds
+            # color_g_mean = '#795fd7'
+            color_g_mean = 'midnightblue'
+            color_e_mean = 'maroon'
+            color_dist = 'gold'
+            vector_bw_blobs = 0.7
+                ### vectors from void_point to centers
+            color_g_vector = 'gold'
+            color_e_vector ='gold'
+            vector_state_lw = 0.7
+                ### zero points
+            color_void = 'gold'
+            color_zero = 'k'
+            color_zero_vector = 'k'
+            vector_zero_lw = 0.5
+                ### background of image
+            fig_face_color = 'white' #this does not work
+            fig_border_color = 'r'
+            bg_color = 'white'
+            grid_color =  '#262626'
+            grid_transp = 0.5
+            title_color = 'k'
+            legend_color = 'white'
+            legend_text_color = 'k'
+            legend_alpha = 0.7
+            legend_frame_color = my_colors_dict['meduza_gold']
+
+
+            import matplotlib as mpl
+            AXES_COLOR = '#262626'
+            mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
+            mpl.rc('xtick', color=AXES_COLOR)
+            mpl.rc('ytick', color=AXES_COLOR)
+            mpl.rc('grid', color=AXES_COLOR)
+
+        if save:
+            if savepath == '':
+                # savepath='D:\\Data\\'+take_dt_str(date=True, time=True, slash=True)+'blobs'
+                # savepath='D:\\Data\\=Exp_Data=\\Processed Data\\fidelity_blobs\\plots\\'+take_dt_str(date=True, time=True, slash=True)+' blobs'
+                savepath='C:\\Users\\V\\Jupyter scripts\\Fidelity data processing'
+
+        if centers is None:
+            [c_re_g, c_im_g, c_re_e, c_im_e ] = centers_two_blobs(re_g, im_g, re_e, im_e)
+        else:
+            [c_re_g, c_im_g, c_re_e, c_im_e ] = centers
+
+        ### find angle 2*alpha (angle between two blolbs according to void-state)
+        angle_between_blobs = angle_three_points(c_re_g,c_im_g, void_re_mv,void_im_mv, c_re_e,c_im_e)
+
+            ## SETTING BORDERS ### (now it is outside)
+        if not crop:
+            [leftlim, rightlim, toplim, bottomlim ]= limits
+            if leftlim is None:
+                leftlim =  np.min([  0,   np.min([ re_e, re_g ])  ])
+            if rightlim is None:
+                rightlim = np.max([  0,   np.max([ re_e, re_g ])  ])
+            if toplim is None:
+                toplim =   np.max([  0,   np.max([ im_e, im_g ])  ])
+            if bottomlim is None:
+                bottomlim =np.min([  0,   np.min([ im_e, im_g ])  ])
+        else:
+            [leftlim, rightlim, toplim, bottomlim ] = crop_fluctuations(re_g, im_g ,re_e, im_e, void_re=self.void_re_mv, void_im=self.void_im_mv )
+
+        # leftlim = np.min([ re_e, re_g, 0 ])
+        # rightlim = np.max([ re_e, re_g, 0 ])
+        # toplim = np.max([ im_e, im_g, 0 ])
+        # bottomlim = np.min([ im_e, im_g, 0 ])
+
+        ### calculation of angle and distance between blolb centers
+        [dist, theta] = complex_num_relationships(c_re_g,c_im_g,c_re_e,c_im_e)
+        str_blob_place = 'Distance:'+ str(round(dist, 2)) + '; Theta:' + str( int(round(theta)) )
+        print str_blob_place
+
+        ### vectors of each states from void signal
+        [amp_g, ph_g] = complex_num_relationships(void_re_mv, void_im_mv, c_re_g,c_im_g)
+        [amp_e, ph_e] = complex_num_relationships(void_re_mv, void_im_mv, c_re_e,c_im_e)
+
+        str_g_place = 'Amp:'+ str(round(amp_g,2)) + '; Phase:'+ str(int( round(ph_g))  )
+        str_e_place = 'Amp:'+ str(round(amp_e,2)) + '; Phase:'+ str(int( round(ph_e))  )
+        amp_relation = round(amp_e/amp_g,2)
+        str_blob_place = str_blob_place + '; Ratio amps: '+str(amp_relation)
+        print str_g_place
+        print str_e_place
+        print 'Ratio amps:', amp_relation
+
+
+        if dark:
+            fname = fname + '_dark'
+
+        fig = plt.figure(fname, facecolor=fig_face_color, edgecolor = fig_border_color)
+        ax = fig.add_subplot(1, 1, 1) # nrows, ncols, index
+        ax.set_facecolor(bg_color)
+
+        if font is not None:
+            plt.axis('equal',fontproperties = font)   #same step X and Y        #square axis automatic
+        else:
+            plt.axis('equal')
+
+        plt.xlim( left = leftlim, right=rightlim )
+        plt.ylim( top =  toplim, bottom=bottomlim )
+
+        plt.grid(color=grid_color, alpha= grid_transp)
+
+        if title_str is None:
+            if font is not None:
+                plt.title(self.timestamp, color=title_color,fontproperties = font)
+                # plt.title(take_dt_str(date=True, time=True, slash=False), color=title_color,fontproperties = font)
+            else:
+                # plt.title(take_dt_str(date=True, time=True, slash=False), color=title_color)
+                plt.title(self.timestamp, color=title_color)
+        else:
+            if font is not None:
+                plt.title(title_str, color=title_color,fontproperties = font)
+            else:
+                plt.title(title_str, color=title_color)
+
+        if font is not None:
+            plt.xlabel('Re [mV]',fontproperties = font)
+            plt.ylabel('Im [mV]',fontproperties = font)
+        else:
+            plt.xlabel('Re [mV]')
+            plt.ylabel('Im [mV]')
+
+        plt.scatter(re_e, im_e, color=color_e, alpha=transpcy, s=markersize)
+        plt.scatter(re_g, im_g, color=color_g, alpha=transpcy, s=markersize)
+
+        plt.plot([c_re_g, c_re_e], [c_im_g, c_im_e], label=str_blob_place, color=color_dist, linewidth = vector_bw_blobs)              #plot line between blobs centers
+        plt.plot([void_re_mv,c_re_g], [void_im_mv, c_im_g], color=color_g_vector, linewidth=vector_state_lw)        #plot line from VOID to |g> blob
+        plt.plot([void_re_mv,c_re_e], [void_im_mv, c_im_e], color=color_e_vector, linewidth=vector_state_lw)        #plot line from VOID to |e> blob
+        if zero_on_plot:
+            plt.plot([0, void_re_mv], [0, void_im_mv], color=color_zero_vector, linewidth=vector_zero_lw)      #plot line form [0,0] to VOID
+
+        plt.plot([ c_re_g ],[ c_im_g ],'+', color=color_g_mean, label='g-state: '+str_g_place)  #this two needs only for legend color
+        plt.plot([ c_re_e ],[ c_im_e ],'+', color=color_e_mean, label='e-state: '+str_e_place)
+        plt.plot([void_re_mv ],[void_im_mv ],'+', label='Void zero: Re:'+ str(round(void_re_mv,2))+ '; Im:'+ str(round(void_im_mv,2)) + '; 2*alpha='+ str(int(round(angle_between_blobs)) ), color=color_void )      #coordinats of no signal VOID (global)
+        if zero_on_plot:
+            plt.plot([0],[0],'+', color=color_zero )   #coordinats of 0 mV
+
+        if font is not None:
+            leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='lower left', facecolor=legend_color,edgecolor=legend_frame_color, prop=font)
+        else:
+            leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='lower left', facecolor=legend_color,edgecolor=legend_frame_color)
+
+        for text in leg.get_texts():        #set color to legend text
+            plt.setp(text, color = legend_text_color)
+
+        if font is not None:
+            for label in ax.get_xticklabels():  #set font to each xtick
+                label.set_fontproperties(font)
+            for label in ax.get_yticklabels():  #set font to each xtick
+                label.set_fontproperties(font)
+
+        if save:
+            import os
+
+            if not os.path.exists(savepath):
+                os.makedirs(savepath)
+            full_fname = savepath +'\\'+ fname + '.png'
+            plt.savefig(full_fname, transparent = fig_transp, facecolor=fig_face_color, edgecolor=fig_border_color, fontproperties = font)
+
+        if show:
+            plt.show()
+        # else:
+        #     plt.close()
+
+        return fig
+
+    def plot_hist_1D(self, plot_raw_not_sel=True, plot_pre_data=True, n_bins=100, fname='Hists', dark=True, limits=None, log=True, save=False, savepath='', show=False, fig_transp=False, title_str='Hists', font=None):
+        '''
+        Plot the histogram of 1D data (could be Re, Im or renormalized blobs)
+        Takes two* ndarrays of data
+        '''
+        if (self.x_g is None) or (self.x_e is None):
+            self.create_norm_data_from_raw()    ### do renormalization
+
+        #### data extraction ###
+        void_re_mv = self.x_void_mv
+        void_im_mv = self.y_void_mv
+
+        if plot_raw_not_sel:
+            re_g     = self.x_g
+            im_g     = self.y_g
+            re_e     = self.x_e
+            im_e     = self.y_e
+        else:
+            if (self.x_g_select is None) or (self.x_e_select is None):
+                print 'There is no selected data prepared'
+                return False
+            re_g     = self.x_g_select
+            im_g     = self.y_g_select
+            re_e     = self.x_e_select
+            im_e     = self.y_e_select
+
+        if plot_pre_data:
+            re_g_p = self.x_g_pre
+            im_g_p = self.y_g_pre
+            re_e_p = self.x_e_pre
+            im_e_p = self.y_e_pre
+        else:
+            re_g_p = None
+            im_g_p = None
+            re_e_p = None
+            im_e_p = None
+
+
+        ### LIMITS
+        if limits is not None:
+            [minlim, maxlim] = limits
+            # step = (maxlim - minlim)/ n_bins
+            # mybins = np.arange(minlim, maxlim, step)
+            mybins = np.linspace(minlim, maxlim, n_bins)
+        else:
+            mybins = n_bins
+        ####  END LIMITS ###
+
+        ### STYLE
+        if dark:
+            fname = fname + '_dark'
+            color_g = my_colors_dict['blob_g']
+            color_e = my_colors_dict['blob_e']
+            color_post = my_colors_dict['blob_post']
+
+            # color_dist =    my_colors_dict['deus_ex_gold']
+            # color_zero = my_colors_dict['meduza_gold']
+                    ### background of image
+            fig_face_color = '#262626' #this does not work
+            fig_border_color = 'r'
+            # bg_color = 'k'
+            bg_color = '#262626'
+            grid_color =  my_colors_dict['meduza_gold']
+            grid_transp = 0.5
+            title_color = my_colors_dict['meduza_gold']
+            legend_color = '#262626'
+            legend_text_color = my_colors_dict['meduza_gold']
+            legend_alpha = 0.7
+            legend_frame_color = my_colors_dict['meduza_gold']
+
+            th_alpha = 0.7
+            th_color = my_colors_dict['deus_ex_gold']
+            th_width = 2.0
+
+            AXES_COLOR = my_colors_dict['meduza_gold']
+            import matplotlib as mpl
+            mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
+            mpl.rc('xtick', color=AXES_COLOR)
+            mpl.rc('ytick', color=AXES_COLOR)
+            mpl.rc('grid', color=AXES_COLOR)
+        else:
+            color_g = 'b'
+            color_e = 'r'
+            color_g_mean = 'midnightblue'
+            color_e_mean = 'maroon'
+            color_post = my_colors_dict['blob_post']
+            frame_color = 'white'
+            bg_color = 'white'
+            grid_color = 'lightgrey'
+            color_dist = 'gold'
+            color_zero = 'k'
+            grid_transp=None
+
+            color_g = 'b'
+            color_e = 'r'
+            transpcy=2.5e-2
+            markersize = None   #None - by default
+                ### centers of clouds
+            # color_g_mean = '#795fd7'
+            color_g_mean = 'midnightblue'
+            color_e_mean = 'maroon'
+            color_dist = 'gold'
+            vector_bw_blobs = 0.7
+                ### vectors from void_point to centers
+            color_g_vector = 'gold'
+            color_e_vector ='gold'
+            vector_state_lw = 0.7
+                ### zero points
+            color_void = 'gold'
+            color_zero = 'k'
+            color_zero_vector = 'k'
+            vector_zero_lw = 0.5
+                ### background of image
+            fig_face_color = 'white' #this does not work
+            fig_border_color = 'r'
+            bg_color = 'white'
+            grid_color =  '#262626'
+            grid_transp = 0.5
+            title_color = 'k'
+            legend_color = 'white'
+            legend_text_color = 'k'
+            legend_alpha = 0.7
+            legend_frame_color = 'k'
+
+            th_alpha = 0.7
+            th_color = my_colors_dict['deus_ex_gold']
+            th_width = 2.0
+
+
+            import matplotlib as mpl
+            AXES_COLOR = '#262626'
+            mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
+            mpl.rc('xtick', color=AXES_COLOR)
+            mpl.rc('ytick', color=AXES_COLOR)
+            mpl.rc('grid', color=AXES_COLOR)
+
+        ### font default
+        if font is None:
+            plt.rc('font', family = 'Verdana')
+
+        ### PREPARE PICTURE ###
+        fig, ax = plt.subplots(1, 1, sharey=True, tight_layout=True, facecolor=fig_face_color, edgecolor = fig_border_color)
+
+        h_g_post = None
+        h_e_post = None
+        if (re_g_p is not None) and (im_g_p is not None):
+            h_g_post = ax.hist(re_g_p, bins=mybins, color=color_post, histtype='step', log=log, label='Read prepulse')
+        if (re_e_p is not None) and (im_e_p is not None):
+            h_e_post = ax.hist(re_e_p, bins=mybins, color=color_post, histtype='step', log=log, label='Read prepulse')
+        h_g = ax.hist(re_g,   bins=mybins, color=color_g,    histtype='step', log=log, label='Read g-state')
+        h_e = ax.hist(re_e,   bins=mybins, color=color_e,    histtype='step', log=log, label='Read e-state')
+
+        ax.set_facecolor(bg_color)
+        plt.grid(color=grid_color, alpha= grid_transp)
+        maxval = np.max([ np.max(h_g[0]), np.max(h_e[0]) ])
+        plt.ylim(ymin=1, ymax=maxval*2)
+
+        if self.threshold is not None:
+            plt.axvline(x=self.threshold, alpha=th_alpha, c=th_color, lw=th_width)
+
+        if font is not None:
+            plt.title(title_str, color=title_color,fontproperties = font)
+            plt.xlabel('[mV]',fontproperties = font)
+            plt.ylabel('Counts',fontproperties = font)
+            leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='lower left', facecolor=legend_color, edgecolor=legend_frame_color,prop=font)
+            for label in ax.get_xticklabels():  #set font to each xtick
+                label.set_fontproperties(font)
+            for label in ax.get_yticklabels():  #set font to each xtick
+                label.set_fontproperties(font)
+        else:
+            plt.title(title_str, color=title_color)
+            plt.xlabel('[mV]')
+            plt.ylabel('Counts')
+            leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='lower left', facecolor=legend_color, edgecolor=legend_frame_color)
+
+        for text in leg.get_texts():        #set color to legend text
+            plt.setp(text, color = legend_text_color)
+
+        if save:
+            if savepath == '':
+                # savepath='D:\\Data\\'+take_dt_str(date=True, time=True, slash=True)+'hists'
+                # savepath='D:\\Data\\=Exp_Data=\\Processed Data\\fidelity_blobs\\plots\\'+take_dt_str(date=True, time=True, slash=True)+' hists'
+                savepath='C:\\Users\\V\\Jupyter scripts\\Fidelity data processing'
+            import os
+            if not os.path.exists(savepath):
+                os.makedirs(savepath)
+            full_fname = savepath +'\\'+ fname + '.png'
+            plt.savefig(full_fname, transparent = fig_transp, facecolor=fig_face_color, edgecolor=fig_border_color)
+
+        if show:
+            plt.show()
+        # else:
+        #     plt.close()
+
+        ### reshape tuple of arrays:
+        def hist_tuple_to_xy_func(h_tuple):
+            '''
+            plt.hist automaticly return a tuple (values_array, coordinate_array)
+            and they have different lenghtes bacouse of this:   .-.-.-.   :(3 lines, 4 points)
+            this function reshape the coordinate array to make possible to match values to cordinates
+            ### Thin it out!
+            '''
+            if h_tuple is None:
+                return None
+            vals = h_tuple[0]
+
+            cords = h_tuple[1]
+            cords_1 = np.zeros_like(cords[:-1])
+            for i in range(len(cords_1)):
+                cords_1[i] = np.mean([  cords[i],cords[i+1] ])
+
+            return [vals, cords_1]
+        h_g = hist_tuple_to_xy_func(h_g)
+        h_e = hist_tuple_to_xy_func(h_e)
+        if (re_g_p is not None) and (im_g_p is not None):
+            h_g_post = hist_tuple_to_xy_func(h_g_post)
+        if (re_e_p is not None) and (im_e_p is not None):
+            h_e_post = hist_tuple_to_xy_func(h_e_post)
+
+        # return fig
+        return [h_g, h_e, h_g_post, h_e_post]
+
+    def plot_f_vs_threshold(self, xmin=None, xmax=None, ymin=None, ymax=None):
+        '''
+        function to show fidelity versus threshold
+        '''
+        def get_fro_vs_threshold(x_g, x_e, threshold):
+            '''
+            Simplest function to calculate only f_ro for given threshold value
+            Calculate fidelity for given value of THRESHOLD
+            Takes 1D arrays of normalized g and e results. ( re_g & re_e )
+            return only value of f_ro = 1. - 0.5*(p_ge + p_eg)
+            '''
+            dict_count = get_count_states(x_g,x_e,threshold)
+            p_ge = dict_count['p_ge']
+            p_eg = dict_count['p_eg']
+            f_ro = 1. - 0.5*(p_ge + p_eg)
+            return f_ro
+
+        if (self.x_g is None) or (self.x_e is None):
+            self.create_norm_data_from_raw()
+        x_g = self.x_g
+        x_e = self.x_e
+
+        nop = 200.
+        [leftlim, rightlim, rabbish1, rabbish2 ] = crop_fluctuations(self.x_g, [0] , self.x_e, [0], 0, 0 )
+        # step = abs(rightlim - leftlim) / nop
+        # thr_vector = np.arange(leftlim, rightlim, step)
+        thr_vector = np.linspace(leftlim, rightlim, nop)
+
+        fid_vector = []
+        for thr in thr_vector:
+            fid_vector.append( get_fro_vs_threshold(x_g, x_e, thr) )
+
+
+        pic = plt.figure()
+        # plt.xlim(xmin, xmax)
+        # plt.ylim(ymin, ymax)
+        plt.plot(thr_vector, fid_vector, '.')
+
+
+        ##postselected
+        if (self.x_g_select is not None ) and (self.x_e_select is not None):
+            fid_post_vector = []
+            for thr in thr_vector:
+                fid_post_vector.append( get_fro_vs_threshold(self.x_g_select, self.x_e_select, thr) )
+            plt.plot(thr_vector, fid_post_vector, '.')
+
+        return pic
+################################################################################
