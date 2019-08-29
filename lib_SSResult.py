@@ -317,11 +317,18 @@ def get_count_states(x_g, x_e, threshold):
 ################################################################################
 class Histogram:
     '''
-    Consist of histogram itself (tuple of x and y)
-    Also contain fitting curves
-    And fit parameters
+    A class to containt histograms and it's fit data
 
-    method - fit
+    Variables:
+    hist        - histogram itself = tuple: [val_arr, bins_arr]
+    hist_xy     - histogram ramake to len(val) = len(bins) [val_arr, x_arr]
+    gauss_fit   - also tuple with [val_arr, x_arr] but for fitted curve
+    gauss_param - parameters of fit []
+
+    Method:
+    fit( threshold, crop_sign )
+        crop_sign - +1 if you need to take part more than threshold
+                    -1 otherwise
     '''
     hist        = None
     hist_xy     = None
@@ -335,25 +342,26 @@ class Histogram:
         takes 1D array of data
         '''
         self.hist = np.histogram(x, bins=nbins)
-        self.hist_xy = self.hist_tuple_to_xy_func(self.hist)
 
-    def hist_tuple_to_xy_func(self, h_tuple):
-        '''
-        plt.hist automaticly return a tuple (values_array, coordinate_array)
-        and they have different lenghtes bacouse of this:   .-.-.-.   :(3 lines, 4 points)
-        this function reshape the coordinate array to make possible to match values to cordinates
-        ### Thin it out!
-        '''
-        if h_tuple is None:
-            return None
-        vals = h_tuple[0]
-        cords = h_tuple[1]
+        def hist_tuple_to_xy_func(h_tuple):
+            '''
+            plt.hist automaticly return a tuple (values_array, coordinate_array)
+            and they have different lenghtes bacouse of this:   .-.-.-.   :(3 lines, 4 points)
+            this function reshape the coordinate array to make possible to match values to cordinates
+            ### Thin it out!
+            '''
+            if h_tuple is None:
+                return None
+            vals = h_tuple[0]
+            cords = h_tuple[1]
 
-        cords_1 = np.zeros_like(cords[:-1])
-        for i in range(len(cords_1)):
-            cords_1[i] = np.mean([  cords[i], cords[i+1] ])
+            cords_1 = np.zeros_like(cords[:-1])
+            for i in range(len(cords_1)):
+                cords_1[i] = np.mean([  cords[i], cords[i+1] ])
 
-        return [vals, cords_1]
+            return [vals, cords_1]
+
+        self.hist_xy = hist_tuple_to_xy_func(self.hist)
 
     def fit(self, threshold, crop_sign):
         '''
@@ -459,13 +467,15 @@ class Histogram:
 
 
             ### here we already know exact centers!
-            center_mv = gauss_p[2]
-            std_mv    = gauss_p[3]
+            min_y       = gauss_p[0]
+            max_y       = gauss_p[1]
+            center_mv   = gauss_p[2]
+            std_mv      = gauss_p[3]
 
             sigma_mv  = std_mv/2
 
             h_x_fit     = [ y_gausfit, x_axis ]
-            p_list      = [ center_mv, sigma_mv ]
+            p_list      = [ center_mv, sigma_mv, std_mv, max_y, min_y ]
             return [h_x_fit, p_list]
 
         [ hist_x_fit, gaus_par_x ]  = fit_gauss( self.hist_xy, crop_thr=threshold, crop_sign=crop_sign )
@@ -926,7 +936,7 @@ class SSResult:
         ### making hists and fit for x_g_selected & x_e_selected ###
         if self.x_g_select is not None:
             self.x_g_select_hist = Histogram(self.x_g_select, nbins = nbins)
-            self.x_g_select_hist.fit(self.threshold, e_crop_s)
+            self.x_g_select_hist.fit(self.threshold, g_crop_s)
 
         if self.x_e_select is not None:
             self.x_e_select_hist = Histogram(self.x_e_select, nbins = nbins)
@@ -1239,51 +1249,258 @@ class SSResult:
 
         return fig
 
-    def plot_hists_new(self):
+    def plot_hists(self, regime='raw_data', dark=True, log=True, save=False, savepath='', fname='Hists', fig_transp=False, title_str='', font=None):
         '''
-        function of plot histograms
+        function of plot histograms of object is it exists
+        have different regimes:
+        regime = 'raw_data' - plot hists of data with fit(if it is)
+        regime = 'raw_data_and_pre' - same, but with results of prepulse
+        regime = 'selected' - plot postselected data with fit(if it is)
+        regime = 'raw_and_selected' compare between raw data and postselected (no fit)
         '''
-        fig = plt.figure()
-        plt.yscale('log')
-        plt.ylim(1,700)
+        ###############################################
+        ### all design here _________________________##
+        ###############################################
+
+        ### STYLE
+        if dark:
+            fname = fname + '_dark'
+            color_g = my_colors_dict['blob_g']
+            color_e = my_colors_dict['blob_e']
+            color_post = my_colors_dict['blob_post']
+            color_fit_g = my_colors_dict['g_state_mark']
+            color_fit_e = my_colors_dict['e_state_mark']
+
+            # color_dist =    my_colors_dict['deus_ex_gold']
+            # color_zero = my_colors_dict['meduza_gold']
+                    ### background of image
+            fig_face_color = '#262626' #this does not work
+            fig_border_color = 'r'
+            # bg_color = 'k'
+            bg_color = '#262626'
+            grid_color =  my_colors_dict['meduza_gold']
+            grid_transp = 0.5
+            title_color = my_colors_dict['meduza_gold']
+            legend_color = '#262626'
+            legend_text_color = my_colors_dict['meduza_gold']
+            legend_alpha = 0.7
+            legend_frame_color = my_colors_dict['meduza_gold']
+
+            th_alpha = 0.7
+            th_color = my_colors_dict['deus_ex_gold']
+            th_width = 2.0
+            th_linestyle = '--'
+
+            AXES_COLOR = my_colors_dict['meduza_gold']
+            import matplotlib as mpl
+            mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
+            mpl.rc('xtick', color=AXES_COLOR)
+            mpl.rc('ytick', color=AXES_COLOR)
+            mpl.rc('grid', color=AXES_COLOR)
+        else:
+            color_g = 'b'
+            color_e = 'r'
+            color_g_mean = 'midnightblue'
+            color_e_mean = 'maroon'
+            color_post = my_colors_dict['blob_post']
+            color_fit_g = my_colors_dict['g_state_mark']
+            color_fit_e = my_colors_dict['e_state_mark']
+
+            frame_color = 'white'
+            bg_color = 'white'
+            grid_color = 'lightgrey'
+            color_dist = 'gold'
+            color_zero = 'k'
+            grid_transp=None
+
+            color_g = 'b'
+            color_e = 'r'
+            transpcy=2.5e-2
+            markersize = None   #None - by default
+                ### centers of clouds
+            # color_g_mean = '#795fd7'
+            color_g_mean = 'midnightblue'
+            color_e_mean = 'maroon'
+            color_dist = 'gold'
+            vector_bw_blobs = 0.7
+                ### vectors from void_point to centers
+            color_g_vector = 'gold'
+            color_e_vector ='gold'
+            vector_state_lw = 0.7
+                ### zero points
+            color_void = 'gold'
+            color_zero = 'k'
+            color_zero_vector = 'k'
+            vector_zero_lw = 0.5
+                ### background of image
+            fig_face_color = 'white' #this does not work
+            fig_border_color = 'r'
+            bg_color = 'white'
+            grid_color =  '#262626'
+            grid_transp = 0.5
+            title_color = 'k'
+            legend_color = 'white'
+            legend_text_color = 'k'
+            legend_alpha = 0.7
+            legend_frame_color = 'k'
+
+            th_alpha = 0.7
+            th_color = my_colors_dict['deus_ex_gold']
+            th_width = 2.0
+            th_linestyle = '--'
 
 
+            import matplotlib as mpl
+            AXES_COLOR = '#262626'
+            mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
+            mpl.rc('xtick', color=AXES_COLOR)
+            mpl.rc('ytick', color=AXES_COLOR)
+            mpl.rc('grid', color=AXES_COLOR)
+
+        ### font default
+        if font is None:
+            plt.rc('font', family = 'Verdana')
+
+        ###############################################
+        ### all data plot here ______________________##
+        ###############################################
+        fig, ax = plt.subplots(1, 1, sharey=True, tight_layout=True, facecolor=fig_face_color, edgecolor = fig_border_color)
+        maxval = 1 ##this variable we use for define plt.ylim()
+
+        if self.threshold is not None:
+            plt.axvline(x=self.threshold, alpha=th_alpha, c=th_color, lw=th_width, ls=th_linestyle)
+
+        if regime == 'raw_data':
+            print 'regime: raw_data'
+            #### plot x_g, x_e hists ####
+            if (self.x_g_hist.hist_xy is not None) and (self.x_e_hist.hist_xy is not None):
+                hist_g   = self.x_g_hist.hist_xy
+                hist_e   = self.x_e_hist.hist_xy
+                maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_g, label='Read g-state')
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_e, label='Read e-state')
+
+            #### plot fit hists ####
+            if (self.x_g_hist.gauss_fit is not None) and (self.x_e_hist.gauss_fit is not None):
+                hist_g  = self.x_g_hist.gauss_fit
+                hist_e  = self.x_e_hist.gauss_fit
+                # maxval = np.max([ maxval, np.max(hist_g_fit[0]), np.max(hist_e_fit[0]) ])
+                plt.plot(hist_g[1], hist_g[0], lw=1, color=color_fit_g, label='fit g-state')
+                plt.plot(hist_e[1], hist_e[0], lw=1, color=color_fit_e, label='fit e-state')
+
+        elif regime == 'raw_data_and_pre':
+            print 'regime: raw_data_and_pre'
+            #### plot PREPULSE hists ####
+            if (self.x_g_pre_hist is not None) and (self.x_e_pre_hist is not None):
+                hist_g  = self.x_g_pre_hist.hist_xy
+                hist_e  = self.x_e_pre_hist.hist_xy
+                # maxval = np.max([ maxval, np.max(hist_g_fit[0]), np.max(hist_e_fit[0]) ])
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_post, label='Prepulse g-state')
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_post, label='Prepulse e-state')
+
+            #### plot x_g, x_e hists ####
+            if (self.x_g_hist.hist_xy is not None) and (self.x_e_hist.hist_xy is not None):
+                hist_g   = self.x_g_hist.hist_xy
+                hist_e   = self.x_e_hist.hist_xy
+                maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_g, label='Read g-state')
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_e, label='Read e-state')
+
+            #### plot fit hists ####
+            if (self.x_g_hist.gauss_fit is not None) and (self.x_e_hist.gauss_fit is not None):
+                hist_g  = self.x_g_hist.gauss_fit
+                hist_e  = self.x_e_hist.gauss_fit
+                # maxval = np.max([ maxval, np.max(hist_g_fit[0]), np.max(hist_e_fit[0]) ])
+                plt.plot(hist_g[1], hist_g[0], lw=1, color=color_fit_g, label='Fit g-state')
+                plt.plot(hist_e[1], hist_e[0], lw=1, color=color_fit_e, label='Fit e-state')
 
 
-        #### plot x_g, x_e hists ####
-        hist_g_xy   = self.x_g_hist.hist_xy
-        hist_e_xy   = self.x_e_hist.hist_xy
-        plt.plot(hist_g_xy[1], hist_g_xy[0], drawstyle='steps', lw=1)
-        plt.plot(hist_e_xy[1], hist_e_xy[0], drawstyle='steps', lw=1)
+        elif regime=='selected':
+            print 'regime: selected'
+            #### plot x_g, x_e hists  SELECTED ####
+            if (self.x_g_select_hist.hist_xy is not None) and (self.x_e_select_hist.hist_xy is not None):
+                hist_g   = self.x_g_select_hist.hist_xy
+                hist_e   = self.x_e_select_hist.hist_xy
+                maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_g, label='Selected g-state')
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_e, label='Selected e-state')
 
-        #### plot fit hists ####
-        hist_g_fit  = self.x_g_hist.gauss_fit
-        hist_e_fit  = self.x_e_hist.gauss_fit
-        plt.plot(hist_g_fit[1], hist_g_fit[0], lw=1, color='b')
-        plt.plot(hist_e_fit[1], hist_e_fit[0], lw=1, color='r')
-
-
-
-        # #### plot Pre pulses hists ####
-        # hist_g_xy_pre   = self.x_g_pre_hist.hist_xy
-        # hist_e_xy_pre   = self.x_e_pre_hist.hist_xy
-        # plt.plot(hist_g_xy_pre[1], hist_g_xy_pre[0], lw=1, color='b')
-        # plt.plot(hist_e_xy_pre[1], hist_e_xy_pre[0], lw=1, color='b')
+            #### plot fit hists ####
+            if (self.x_g_select_hist.gauss_fit is not None) and (self.x_e_select_hist.gauss_fit is not None):
+                hist_g  = self.x_g_select_hist.gauss_fit
+                hist_e  = self.x_e_select_hist.gauss_fit
+                # maxval = np.max([ maxval, np.max(hist_g_fit[0]), np.max(hist_e_fit[0]) ])
+                plt.plot(hist_g[1], hist_g[0], lw=1, color=color_fit_g, label='Fit g-state selected')
+                plt.plot(hist_e[1], hist_e[0], lw=1, color=color_fit_e, label='Fit e-state selected')
 
 
+        elif regime=='raw_and_selected':
+            print 'regime==raw_and_selected'
+            #### plot x_g, x_e hists  SELECTED ####
+            if (self.x_g_select_hist.hist_xy is not None) and (self.x_e_select_hist.hist_xy is not None):
+                hist_g   = self.x_g_select_hist.hist_xy
+                hist_e   = self.x_e_select_hist.hist_xy
+                maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_post, label='Selected g-state')
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_post, label='Selected e-state')
 
-        # #### plot selected hists ####
-        # hist_g_xy   = self.x_g_select_hist.hist_xy
-        # hist_e_xy   = self.x_e_select_hist.hist_xy
-        # plt.plot(hist_g_xy[1], hist_g_xy[0], drawstyle='steps', lw=1)
-        # plt.plot(hist_e_xy[1], hist_e_xy[0], drawstyle='steps', lw=1)
-        #
-        # #### plot selected fit ####
-        # hist_g_fit  = self.x_g_select_hist.gauss_fit
-        # hist_e_fit  = self.x_e_select_hist.gauss_fit
-        # plt.plot(hist_g_fit[1], hist_g_fit[0], lw=1, color='b')
-        # plt.plot(hist_e_fit[1], hist_e_fit[0], lw=1, color='r')
+            #### plot x_g, x_e hists ####
+            if (self.x_g_hist.hist_xy is not None) and (self.x_e_hist.hist_xy is not None):
+                hist_g   = self.x_g_hist.hist_xy
+                hist_e   = self.x_e_hist.hist_xy
+                maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_g, label='Read g-state')
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_e, label='Read e-state')
 
+
+        else:
+            print 'plot_hist: wrong value for regime!'
+
+        ###############################################
+
+
+        ###############################################
+        ### all work with axes here _________________##
+        ###############################################
+        ax.set_facecolor(bg_color)
+        plt.grid(color=grid_color, alpha= grid_transp)
+
+        if log:
+            plt.yscale('log')
+            plt.ylim(ymin=1, ymax=maxval*1.5)
+        else:
+            plt.yscale('linear')
+            plt.ylim(ymin=1, ymax=maxval*1.1)
+
+        if title_str is '':
+            title_str = self.timestamp
+
+        if font is not None:
+            plt.title(title_str, color=title_color,fontproperties = font)
+            plt.xlabel('[mV]',fontproperties = font)
+            plt.ylabel('Counts',fontproperties = font)
+            leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='upper left', facecolor=legend_color, edgecolor=legend_frame_color,prop=font)
+            for label in ax.get_xticklabels():  #set font to each xtick
+                label.set_fontproperties(font)
+            for label in ax.get_yticklabels():  #set font to each xtick
+                label.set_fontproperties(font)
+        else:
+            plt.title(title_str, color=title_color)
+            plt.xlabel('[mV]')
+            plt.ylabel('Counts')
+            leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='upper left', facecolor=legend_color, edgecolor=legend_frame_color)
+
+        for text in leg.get_texts():        #set color to legend text
+            plt.setp(text, color = legend_text_color)
+
+        if save:
+            if savepath == '':
+                savepath='savings\\'
+            import os
+            if not os.path.exists(savepath):
+                os.makedirs(savepath)
+            full_fname = savepath +'\\'+ fname + '.png'
+            plt.savefig(full_fname, transparent = fig_transp, facecolor=fig_face_color, edgecolor=fig_border_color)
 
         return fig
 
