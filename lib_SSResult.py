@@ -315,12 +315,174 @@ def get_count_states(x_g, x_e, threshold):
 ################################################################################
 
 ################################################################################
+class Histogram:
+    '''
+    Consist of histogram itself (tuple of x and y)
+    Also contain fitting curves
+    And fit parameters
+
+    method - fit
+    '''
+    hist        = None
+    hist_xy     = None
+    gauss_fit   = None
+    gauss_param = None
+
+    #########################################
+
+    def __init__(self, x, nbins=100):
+        '''
+        takes 1D array of data
+        '''
+        self.hist = np.histogram(x, bins=nbins)
+        self.hist_xy = self.hist_tuple_to_xy_func(self.hist)
+
+    def hist_tuple_to_xy_func(self, h_tuple):
+        '''
+        plt.hist automaticly return a tuple (values_array, coordinate_array)
+        and they have different lenghtes bacouse of this:   .-.-.-.   :(3 lines, 4 points)
+        this function reshape the coordinate array to make possible to match values to cordinates
+        ### Thin it out!
+        '''
+        if h_tuple is None:
+            return None
+        vals = h_tuple[0]
+        cords = h_tuple[1]
+
+        cords_1 = np.zeros_like(cords[:-1])
+        for i in range(len(cords_1)):
+            cords_1[i] = np.mean([  cords[i], cords[i+1] ])
+
+        return [vals, cords_1]
+
+    def fit(self, threshold, crop_sign):
+        '''
+        decorator for function fit_gauss
+        fit itself
+        '''
+        def fit_gauss(hist_x_xy, crop_thr=None, crop_sign = +1):
+            '''
+            Takes histogram-tuple [x, vals]
+            fits
+            returns histogram-tuple [x, vals_fit] and list of gauss-parameters
+            crop_thr: if it is None - than we fit all the data. If it is threshold_value than we do crop
+            if crop_sign is positive - than we take points more than threshold
+            if crop_sign is negative - than we take points less than threshold
+
+            '''
+
+            def get_only_one_state_histxy(histxy, th=0, sign_ge=+1, state=+1):
+                '''
+                This function return only the points which is above (below) threshold
+                th is threshold value
+                sign_ge: {+1 if e>g, -1 otherwise}
+                state is:
+                for g-state state = -1
+                for e-state state = +1
+                '''
+                x = histxy[1]
+                y = histxy[0]
+
+                if sign_ge * state > 0:
+                    ind = np.where(x < th)
+                elif sign_ge * state < 0:
+                    ind = np.where(x > th)
+                else:
+                    print 'error of input cut_one_state_from_x(). sign_ge and state can be +-1 only'
+
+                x_crop = np.delete(x, ind)
+                y_crop = np.delete(y, ind)
+                hist_crop = [y_crop, x_crop]
+
+                return hist_crop
+
+            def hwhh_xy(x,y):
+                '''
+                This function takes x and y sequence
+                returns half width at half height
+                Works for gaussian type of function (or lorenzian etc.)
+                '''
+                half_heigh = np.max(y)/2.0
+                center_x = x[np.argmax(y)]
+
+                list_x_in = []
+                for i in range(len(y)):
+                    if y[i] > half_heigh:
+                        list_x_in.append(x[i])
+
+                x_max_edge = np.max(list_x_in)
+                x_min_edge = np.min(list_x_in)
+
+                hwhh = (x_max_edge - x_min_edge)/2.0
+
+                return hwhh
+
+            #################################################
+
+            ### to crop or not to crop
+            if crop_thr is None:
+                y = hist_x_xy[0]
+                x = hist_x_xy[1]
+                x_axis = x
+            else:
+                if crop_sign == +1:
+                    hist_x_xy_crop = get_only_one_state_histxy( hist_x_xy, th=crop_thr, sign_ge=+1, state=crop_sign )
+                elif crop_sign == -1:
+                    hist_x_xy_crop = get_only_one_state_histxy( hist_x_xy, th=crop_thr, sign_ge=+1, state=crop_sign )
+                else:
+                    print 'warning in fit_gauss(). crop_sign must be equal to +-1'
+                    return None
+                y = hist_x_xy_crop[0]
+                x = hist_x_xy_crop[1]
+                x_axis = hist_x_xy[1]
+
+
+            ### make an expectatin
+            expec_min_y    = 0
+            expec_max_y    = np.max(y)
+            expec_center_x = x[np.argmax(y)]
+            expec_std_x    = hwhh_xy(x,y)
+            gauss_p0 = [expec_min_y, expec_max_y, expec_center_x, expec_std_x]
+
+            ### fit g state by single gaus
+            import fit
+            gauss = fit.Gaussian()
+            gauss.set_data(x, y)
+            gauss_p = gauss.fit(gauss_p0, fixed=[0])
+            y_gausfit = gauss.func(gauss_p)
+
+            # remake the gaussian again with given parameters, but for all x-axis
+            if crop_thr is not None:
+                gauss1 = fit.Gaussian()
+                gauss1.set_data(x_axis, y)
+                y_gausfit = gauss1.func(gauss_p)
+
+
+            ### here we already know exact centers!
+            center_mv = gauss_p[2]
+            std_mv    = gauss_p[3]
+
+            sigma_mv  = std_mv/2
+
+            h_x_fit     = [ y_gausfit, x_axis ]
+            p_list      = [ center_mv, sigma_mv ]
+            return [h_x_fit, p_list]
+
+        [ hist_x_fit, gaus_par_x ]  = fit_gauss( self.hist_xy, crop_thr=threshold, crop_sign=crop_sign )
+        self.gauss_fit           = hist_x_fit
+        self.gauss_param         = gaus_par_x
+
+        return True
+
+
 class SSResult:
     '''
     This class is linked with one single-shot measurements.
     Data takes only from file during inizialization.
     Contains re and im parts of measured g and e states and also of two pre-measurements
     '''
+    ###---------------------------###
+    ###### DATA ######
     ### Raw Data ###
     void_re_mv = 0
     void_im_mv = 0
@@ -333,44 +495,50 @@ class SSResult:
     re_e_pre = np.array([])
     im_e_pre = np.array([])
 
-    ### Processed Data ###
+    ### Normalised Data ###
     x_void_mv = 0
     y_void_mv = 0
     x_g         = None
     x_e         = None
     x_g_pre     = None
     x_e_pre     = None
-    x_g_select  = None
-    x_e_select  = None
     y_g         = None
     y_e         = None
     y_g_pre     = None
     y_e_pre     = None
+
+    ### Normalised Data after Postselection ###
+    x_g_select  = None
+    x_e_select  = None
     y_g_select  = None
     y_e_select  = None
 
-    ### Histograms ###
-    # ## do we need histograms of re and im? (no)
-    # x_g_hist         = None
-    # x_e_hist         = None
-    # x_g_pre_hist     = None
-    # x_e_pre_hist     = None
-    # x_g_select_hist  = None
-    # x_e_select_hist  = None
+    ## Histograms ### (it is all objects of class Histograms)
+    x_g_hist         = None
+    x_e_hist         = None
+    x_g_pre_hist     = None
+    x_e_pre_hist     = None
+    x_g_select_hist  = None
+    x_e_select_hist  = None
 
+    ###---------------------------###
     ###### MetaData ######
+
+    ### Time ###
     datafile = ''
-    paramfile = ''
     timestamp = ''
 
-    threshold = 0
-    sign_ge = 1     #COULD BE +-1 depends on g>e or e>g
-
-    ### Parameters #######
+    ### Parameters ###
+    paramfile = ''
     dict_param = {
     'freq_read':0, 'power1':0, 't_read':0, 'rudat':0, 'freq_q':0,
      'power2':0, 'rudat2':0, 'tpi':0, 'nsigma':0, 'cur':0
      }
+
+    ### e-g-State definition ###
+    threshold = None
+    sign_ge = 1     #COULD BE +-1 depends on g>e or e>g
+
     ### Results ##########
     ### Count states ###
     dict_count = {
@@ -398,9 +566,9 @@ class SSResult:
      'F_gaus':0, 'F_gaus_eg':0,'F_gaus_ge':0, 'Err_e':0, 'Err_g':0
     }
 
-
     ############################################################################
-    #### Methods ###############################################################
+    ############################################################################
+    #### METHODS ###############################################################
 
     def __init__(self, datafile, paramfile=''):
 
@@ -628,6 +796,10 @@ class SSResult:
             print 'Warning! make_postselected_data_from_norm(); no data to postselect'
             return False
 
+        if self.threshold is None:
+            print 'threshold have not been defined yet'
+            return False
+
         if self.threshold == 0:
             print 'Its already == 0'
             return True
@@ -668,6 +840,9 @@ class SSResult:
         '''
         Do the postselection. Threshold usually=0 because we did set_best_threshold_as_zero() before
         '''
+        if self.threshold is None:
+            print 'threshold have not been defined yet'
+            return False
 
         threshold = self.threshold
 
@@ -718,6 +893,49 @@ class SSResult:
         self.x_e_select = x_e_selected
 
         return [index_g_wrong, index_e_wrong]
+
+    def make_histograms(self, nbins=100):
+        '''
+        This function in charge of histograms
+        of fit the gauss and plot it (remove this part)
+        '''
+        ########################################################################
+        if self.threshold is None:
+            print 'threshold have not been defined yet'
+            return False
+
+        ### making hists and fit for x_g & x_e ###
+        if self.x_g is None or self.x_e is None:
+            self.make_norm_data_from_raw()
+
+        g_crop_s = -self.sign_ge
+        e_crop_s = self.sign_ge
+
+        self.x_g_hist = Histogram(self.x_g, nbins = nbins)
+        self.x_g_hist.fit(self.threshold, g_crop_s)
+        self.x_e_hist = Histogram(self.x_e, nbins = nbins)
+        self.x_e_hist.fit(self.threshold, e_crop_s)
+
+        ### making hists and fit for x_g_pre & x_e_pre ###
+        if self.x_g_pre is not None:
+            self.x_g_pre_hist = Histogram(self.x_g_pre, nbins = nbins)
+
+        if self.x_e_pre is not None:
+            self.x_e_pre_hist = Histogram(self.x_e_pre, nbins = nbins)
+
+        ### making hists and fit for x_g_selected & x_e_selected ###
+        if self.x_g_select is not None:
+            self.x_g_select_hist = Histogram(self.x_g_select, nbins = nbins)
+            self.x_g_select_hist.fit(self.threshold, e_crop_s)
+
+        if self.x_e_select is not None:
+            self.x_e_select_hist = Histogram(self.x_e_select, nbins = nbins)
+            self.x_e_select_hist.fit(self.threshold, e_crop_s)
+
+
+        ### making hists and fit for x_g_pre & x_e_pre ###
+
+        return True
 
     def calculate_fidelity_post(self):
         '''
@@ -895,9 +1113,7 @@ class SSResult:
 
         if save:
             if savepath == '':
-                # savepath='D:\\Data\\'+take_dt_str(date=True, time=True, slash=True)+'blobs'
-                # savepath='D:\\Data\\=Exp_Data=\\Processed Data\\fidelity_blobs\\plots\\'+take_dt_str(date=True, time=True, slash=True)+' blobs'
-                savepath='C:\\Users\\V\\Jupyter scripts\\Fidelity data processing'
+                savepath='savings\\'
 
         if centers is None:
             [c_re_g, c_im_g, c_re_e, c_im_e ] = centers_two_blobs(re_g, im_g, re_e, im_e)
@@ -964,9 +1180,7 @@ class SSResult:
         if title_str is None:
             if font is not None:
                 plt.title(self.timestamp, color=title_color,fontproperties = font)
-                # plt.title(take_dt_str(date=True, time=True, slash=False), color=title_color,fontproperties = font)
             else:
-                # plt.title(take_dt_str(date=True, time=True, slash=False), color=title_color)
                 plt.title(self.timestamp, color=title_color)
         else:
             if font is not None:
@@ -1022,6 +1236,54 @@ class SSResult:
             plt.show()
         # else:
         #     plt.close()
+
+        return fig
+
+    def plot_hists_new(self):
+        '''
+        function of plot histograms
+        '''
+        fig = plt.figure()
+        plt.yscale('log')
+        plt.ylim(1,700)
+
+
+
+
+        #### plot x_g, x_e hists ####
+        hist_g_xy   = self.x_g_hist.hist_xy
+        hist_e_xy   = self.x_e_hist.hist_xy
+        plt.plot(hist_g_xy[1], hist_g_xy[0], drawstyle='steps', lw=1)
+        plt.plot(hist_e_xy[1], hist_e_xy[0], drawstyle='steps', lw=1)
+
+        #### plot fit hists ####
+        hist_g_fit  = self.x_g_hist.gauss_fit
+        hist_e_fit  = self.x_e_hist.gauss_fit
+        plt.plot(hist_g_fit[1], hist_g_fit[0], lw=1, color='b')
+        plt.plot(hist_e_fit[1], hist_e_fit[0], lw=1, color='r')
+
+
+
+        # #### plot Pre pulses hists ####
+        # hist_g_xy_pre   = self.x_g_pre_hist.hist_xy
+        # hist_e_xy_pre   = self.x_e_pre_hist.hist_xy
+        # plt.plot(hist_g_xy_pre[1], hist_g_xy_pre[0], lw=1, color='b')
+        # plt.plot(hist_e_xy_pre[1], hist_e_xy_pre[0], lw=1, color='b')
+
+
+
+        # #### plot selected hists ####
+        # hist_g_xy   = self.x_g_select_hist.hist_xy
+        # hist_e_xy   = self.x_e_select_hist.hist_xy
+        # plt.plot(hist_g_xy[1], hist_g_xy[0], drawstyle='steps', lw=1)
+        # plt.plot(hist_e_xy[1], hist_e_xy[0], drawstyle='steps', lw=1)
+        #
+        # #### plot selected fit ####
+        # hist_g_fit  = self.x_g_select_hist.gauss_fit
+        # hist_e_fit  = self.x_e_select_hist.gauss_fit
+        # plt.plot(hist_g_fit[1], hist_g_fit[0], lw=1, color='b')
+        # plt.plot(hist_e_fit[1], hist_e_fit[0], lw=1, color='r')
+
 
         return fig
 
@@ -1098,6 +1360,7 @@ class SSResult:
             th_alpha = 0.7
             th_color = my_colors_dict['deus_ex_gold']
             th_width = 2.0
+            th_linestyle = '--'
 
             AXES_COLOR = my_colors_dict['meduza_gold']
             import matplotlib as mpl
@@ -1152,6 +1415,7 @@ class SSResult:
             th_alpha = 0.7
             th_color = my_colors_dict['deus_ex_gold']
             th_width = 2.0
+            th_linestyle = '--'
 
 
             import matplotlib as mpl
@@ -1183,7 +1447,7 @@ class SSResult:
         plt.ylim(ymin=1, ymax=maxval*2)
 
         if self.threshold is not None:
-            plt.axvline(x=self.threshold, alpha=th_alpha, c=th_color, lw=th_width)
+            plt.axvline(x=self.threshold, alpha=th_alpha, c=th_color, lw=th_width, ls=th_linestyle)
 
         if font is not None:
             plt.title(title_str, color=title_color,fontproperties = font)
@@ -1205,9 +1469,7 @@ class SSResult:
 
         if save:
             if savepath == '':
-                # savepath='D:\\Data\\'+take_dt_str(date=True, time=True, slash=True)+'hists'
-                # savepath='D:\\Data\\=Exp_Data=\\Processed Data\\fidelity_blobs\\plots\\'+take_dt_str(date=True, time=True, slash=True)+' hists'
-                savepath='C:\\Users\\V\\Jupyter scripts\\Fidelity data processing'
+                savepath='savings\\'
             import os
             if not os.path.exists(savepath):
                 os.makedirs(savepath)
@@ -1246,6 +1508,294 @@ class SSResult:
 
         # return fig
         return [h_g, h_e, h_g_post, h_e_post]
+
+    def plot_hist_1D_fitted(self, n_bins=100, title='Projected points', fname='Hists_fit', dark=True, limits=None, log=True, save=True, savepath='', show=False, fig_transp=False, title_str='Hists fitted', side_text=None, font=None):
+        '''
+        Plot the histogram of 1D data (could be Re, Im or renormalized blobs)
+        Takes two* ndarrays of data
+        make fits
+        plot curve of fit
+        '''
+
+        def fit_gauss(h_g, h_e):
+            import fit
+            ### g-readout
+            guess_min_g = 0
+            guess_max_g = np.max(h_g[0])
+            guess_center_g = np.mean(h_g[0])
+            guess_std_g = np.std(h_g[0])
+
+            ### e-readout
+            guess_min_e = 0
+            guess_max_e = np.max(h_e[0])
+            guess_center_e = np.mean(h_e[0])
+            guess_std_e = np.std(h_e[0])
+
+            ### fit g state by single gaus
+            gauss_g = fit.Gaussian()
+            gauss_g.set_data(h_g[1], h_g[0] )
+            gauss_g_p0 = [guess_min_g, guess_max_g, guess_center_g, guess_std_g]
+            gauss_g_p = gauss_g.fit(gauss_g_p0, fixed=[0])
+            re_g_gausfit = gauss_g.func(gauss_g_p)
+
+            ### fit e state by single gaus
+            gauss_e = fit.Gaussian()
+            gauss_e.set_data(h_e[1], h_e[0] )
+            gauss_e_p0 = [guess_min_e, guess_max_e, guess_center_e, guess_std_e]
+            gauss_e_p = gauss_e.fit(gauss_e_p0, fixed=[0])
+            re_e_gausfit = gauss_e.func(gauss_e_p)
+
+            ### here we already know exact centers! Can calculate the true distance
+            center_g_mv = gauss_g_p[2]
+            std_g_mv = gauss_g_p[3]
+            sigma_g_mv = std_g_mv/2
+
+            center_e_mv = gauss_e_p[2]
+            std_e_mv = gauss_e_p[3]
+            sigma_e_mv = std_e_mv/2
+
+            distance_mv = np.abs(center_g_mv - center_e_mv)
+            sigma_mean = np.mean([sigma_g_mv, sigma_e_mv])
+
+            p_list = [center_g_mv, sigma_g_mv, center_e_mv, sigma_e_mv, distance_mv, sigma_mean]
+            return [re_g_gausfit, re_e_gausfit, p_list]
+
+        def hist_tuple_to_xy_func(h_tuple):
+            '''
+            plt.hist automaticly return a tuple (values_array, coordinate_array)
+            and they have different lenghtes bacouse of this:   .-.-.-.   :(3 lines, 4 points)
+            this function reshape the coordinate array to make possible to match values to cordinates
+            ### Thin it out!
+            '''
+            if h_tuple is None:
+                return None
+            vals = h_tuple[0]
+            cords = h_tuple[1]
+
+            cords_1 = np.zeros_like(cords[:-1])
+            for i in range(len(cords_1)):
+                cords_1[i] = np.mean([  cords[i], cords[i+1] ])
+
+            return [vals, cords_1]
+
+        def get_only_one_state(x, th=0, sign_ge=+1, state=+1):
+            '''
+            This function return only the points which is above (below) threshold
+            th is threshold value
+            sign_ge: {+1 if e>g, -1 otherwise}
+            state is:
+            for g-state state = -1
+            for e-state state = +1
+            '''
+            if sign_ge * state > 0:
+                ind = np.where(x < th)
+            elif sign_ge * state < 0:
+                ind = np.where(x > th)
+            else:
+                print 'error of input cut_one_state_from_x(). sign_ge and state can be +-1 only'
+            return np.delete(x, ind)
+
+        ########################################################################
+
+        ## we need to give only left of |g> vector and only right part of |e> vector
+        ### we can do it with raw data - it is more time
+        ### or we can do it with histogram (but bins number could be not enough)
+
+        values_g = self.x_g
+        values_e = self.x_e
+        values_g_cuted = get_only_one_state(values_g, state= +1, th=self.threshold, sign_ge=self.sign_ge)
+        values_e_cuted = get_only_one_state(values_e, state= -1, th=self.threshold, sign_ge=self.sign_ge)
+
+        h_g = np.histogram(values_g_cuted, bins=100)
+        h_g = hist_tuple_to_xy_func(h_g)
+        h_e = np.histogram(values_e_cuted, bins=100)
+        h_e = hist_tuple_to_xy_func(h_e)
+
+
+        [values_g_fit, values_e_fit, gaus_parameters]  = fit_gauss(h_g, h_e)
+        print gaus_parameters
+
+        topspacer = 1.2   # ylim = y_max * topspacer
+        ### font default
+        if font is None:
+            plt.rc('font', family = 'Verdana')
+
+        ### STYLE
+        if dark:
+            fname = fname + '_dark'
+            color_g = my_colors_dict['blob_g']
+            color_e = my_colors_dict['blob_e']
+            color_post = my_colors_dict['blob_post']
+            color_fit_g = my_colors_dict['g_state_mark']
+            color_fit_e = my_colors_dict['e_state_mark']
+
+            # color_dist =    my_colors_dict['deus_ex_gold']
+            # color_zero = my_colors_dict['meduza_gold']
+                    ### background of image
+            fig_face_color = '#262626' #this does not work
+            fig_border_color = 'r'
+            # bg_color = 'k'
+            bg_color = '#262626'
+            grid_color =  my_colors_dict['meduza_gold']
+            grid_transp = 0.5
+            title_color = my_colors_dict['meduza_gold']
+            legend_color = '#262626'
+            legend_text_color = my_colors_dict['meduza_gold']
+            legend_alpha = 0.7
+            legend_frame_color = my_colors_dict['meduza_gold']
+
+            AXES_COLOR = my_colors_dict['meduza_gold']
+            import matplotlib as mpl
+            mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
+            mpl.rc('xtick', color=AXES_COLOR)
+            mpl.rc('ytick', color=AXES_COLOR)
+            mpl.rc('grid', color=AXES_COLOR)
+        else:
+            color_g = 'b'
+            color_e = 'r'
+            color_post = my_colors_dict['blob_post']
+            color_fit_g = 'midnightblue'
+            color_fit_e = 'maroon'
+            color_post = my_colors_dict['blob_post']
+
+            frame_color = 'white'
+            bg_color = 'white'
+            grid_color = 'lightgrey'
+            color_dist = 'gold'
+            color_zero = 'k'
+            grid_transp=None
+
+            color_g = 'b'
+            color_e = 'r'
+            transpcy=2.5e-2
+            markersize = None   #None - by default
+                ### centers of clouds
+            # color_g_mean = '#795fd7'
+            color_g_mean = 'midnightblue'
+            color_e_mean = 'maroon'
+            color_dist = 'gold'
+            vector_bw_blobs = 0.7
+                ### vectors from void_point to centers
+            color_g_vector = 'gold'
+            color_e_vector ='gold'
+            vector_state_lw = 0.7
+                ### zero points
+            color_void = 'gold'
+            color_zero = 'k'
+            color_zero_vector = 'k'
+            vector_zero_lw = 0.5
+                ### background of image
+            fig_face_color = 'white' #this does not work
+            fig_border_color = 'r'
+            bg_color = 'white'
+            grid_color =  '#262626'
+            grid_transp = 0.5
+            title_color = 'k'
+            legend_color = 'white'
+            legend_text_color = 'k'
+            legend_alpha = 0.7
+            legend_frame_color = 'k'
+
+            import matplotlib as mpl
+            AXES_COLOR = '#262626'
+            mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
+            mpl.rc('xtick', color=AXES_COLOR)
+            mpl.rc('ytick', color=AXES_COLOR)
+            mpl.rc('grid', color=AXES_COLOR)
+
+        # ### LIMITS
+        # if limits is not None:
+        #     [minlim, maxlim] = limits
+        #     step = (maxlim - minlim)/ n_bins
+        #     mybins = np.arange(minlim, maxlim, step)
+        # else:
+        #     ## (!) Here is a problem. Different types!
+        #     mybins = n_bins
+        # ####  END LIMITS ###
+
+        ### LIMITS
+        if limits is not None:
+            [minlim, maxlim] = limits
+        else:
+            [minlim, maxlim, rabbish1, rabbish2 ] = crop_fluctuations(self.x_g, [0] , self.x_e, [0], 0, 0 )
+        step = (maxlim - minlim)/ n_bins
+        mybins = np.arange(minlim, maxlim, step)
+        ####  END LIMITS ###
+
+        ### PREPARE PICTURE ###
+        fig, ax = plt.subplots(1, 1, sharey=True, tight_layout=True, facecolor=fig_face_color, edgecolor = fig_border_color)
+
+        h_g_fit = None
+        h_e_fit = None
+        if values_g_fit is not None:
+            h_g_fit = ax.plot(mybins, values_g_fit, color=color_fit_g, label='fit g-state')
+        if values_e_fit is not None:
+            h_e_fit = ax.plot(mybins, values_e_fit, color=color_fit_e, label='fit e-state')
+        h_g = ax.hist(values_g,   bins=mybins, color=color_g,    histtype='step', log=log, label='Read g-state')
+        h_e = ax.hist(values_e,   bins=mybins, color=color_e,    histtype='step', log=log, label='Read e-state')
+
+        ax.set_facecolor(bg_color)
+        plt.grid(color=grid_color, alpha= grid_transp)
+        maxval = np.max([ np.max(h_g[0]), np.max(h_e[0]) ])
+        plt.ylim(ymin=1, ymax=maxval * topspacer)
+        if side_text is not None:
+            plt.plot([0],[-1],'.',label=side_text, visible=False)
+        if font is not None:
+            plt.title(title_str, color=title_color,fontproperties = font)
+            plt.xlabel('[mV]',fontproperties = font)
+            plt.ylabel('Counts',fontproperties = font)
+            leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='lower left', facecolor=legend_color, edgecolor=legend_frame_color,prop=font)
+            for label in ax.get_xticklabels():  #set font to each xtick
+                label.set_fontproperties(font)
+            for label in ax.get_yticklabels():  #set font to each xtick
+                label.set_fontproperties(font)
+        else:
+            plt.title(title_str, color=title_color)
+            plt.xlabel('[mV]')
+            plt.ylabel('Counts')
+            leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='lower left', facecolor=legend_color, edgecolor=legend_frame_color)
+        for text in leg.get_texts():        #set color to legend text
+            plt.setp(text, color = legend_text_color)
+
+
+
+        if save:
+            if savepath == '':
+                savepath='savings\\'
+            import os
+            if not os.path.exists(savepath):
+                os.makedirs(savepath)
+            full_fname = savepath +'\\'+ fname + '.png'
+            plt.savefig(full_fname, transparent = fig_transp, facecolor=fig_face_color, edgecolor=fig_border_color)
+
+        # if show:
+        #     plt.show()
+        # else:
+        #     plt.close()
+
+        # reshape tuple of arrays:
+        def hist_tuple_to_xy_func(h_tuple):
+            '''
+            plt.hist automaticly return a tuple (values_array, coordinate_array)
+            and they have different lenghtes bacouse of this:   .-.-.-.   :(3 lines, 4 points)
+            this function reshape the coordinate array to make possible to match values to cordinates
+            ### Thin it out!
+            '''
+            if h_tuple is None:
+                return None
+            vals = h_tuple[0]
+
+            cords = h_tuple[1]
+            cords_1 = np.zeros_like(cords[:-1])
+            for i in range(len(cords_1)):
+                cords_1[i] = np.mean([  cords[i],cords[i+1] ])
+
+            return [vals, cords_1]
+        h_g = hist_tuple_to_xy_func(h_g)
+        h_e = hist_tuple_to_xy_func(h_e)
+
+        return plt
+
 
     def plot_f_vs_threshold(self, xmin=None, xmax=None, ymin=None, ymax=None):
         '''
