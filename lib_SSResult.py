@@ -333,7 +333,7 @@ class Histogram:
     hist        = None
     hist_xy     = None
     gauss_fit   = None
-    gauss_param = None
+    gauss_param = None  #[ center_mv, sigma_mv, std_mv, max_y, min_y ]
 
     #########################################
 
@@ -524,12 +524,12 @@ class SSResult:
     y_e_select  = None
 
     ## Histograms ### (it is all objects of class Histograms)
-    x_g_hist         = None
-    x_e_hist         = None
-    x_g_pre_hist     = None
-    x_e_pre_hist     = None
-    x_g_select_hist  = None
-    x_e_select_hist  = None
+    hist_x_g         = None
+    hist_x_e         = None
+    hist_x_g_pre     = None
+    hist_x_e_pre     = None
+    hist_x_g_select  = None
+    hist_x_e_select  = None
 
     ###---------------------------###
     ###### MetaData ######
@@ -548,6 +548,16 @@ class SSResult:
     ### e-g-State definition ###
     threshold = None
     sign_ge = 1     #COULD BE +-1 depends on g>e or e>g
+
+    ### centers of blobs (in first approximation - np.mean, after taken from gauss fit)
+    center_x_g = None
+    center_x_e = None
+
+    # ### for future - need a back rotation #(normalisation)^-1
+    # center_re_g = None
+    # center_re_e = None
+    # center_im_g = None
+    # center_re_e = None
 
     ### Results ##########
     ### Count states ###
@@ -826,12 +836,12 @@ class SSResult:
                 if abs(previous_fid - best_fid) < permiss:
                     return best_th
 
-            print 'arg best:', arg_best
-            print 'best fidelity: ', best_fid
+            # print 'arg best:', arg_best
+            # print 'best fidelity: ', best_fid
 
             if abs(best_fid - left_fid) > permiss  or  abs(best_fid - right_fid) > permiss:
                 # recursion here
-                print 'ONE MORE ITTERATION'
+                # print 'ONE MORE ITTERATION'
                 best_th = get_best_threshold(x_g, x_e, best_th, delta0/10, permiss=permiss, previous_fid=best_fid)
             return best_th
         ###---
@@ -848,7 +858,7 @@ class SSResult:
         delta = abs(rightlim - leftlim)
 
         threshold = get_best_threshold(self.x_g, self.x_e, 0, delta, permiss=1e-4)
-        print 'threshold:', threshold
+        # print 'threshold:', threshold
 
         ##########______SET AND RETURN_____#####################################
         self.threshold = threshold
@@ -907,6 +917,18 @@ class SSResult:
             self.x_e_select = shifter(self.x_e_select, threshold)
 
         [self.x_void_mv] = shifter([self.x_void_mv], threshold)
+
+        # ### shift the center of blobs also
+        # if self.center_x_g is not None:
+        #     [self.center_x_g] = shifter([self.center_x_g], threshold)
+        # if self.center_x_e is not None:
+        #     [self.center_x_g] = shifter([self.center_x_e], threshold)
+
+        ### Kostil: And if the data is shifted we need also to shift histograms if it is exist!
+        if (self.hist_x_g is not None) or (self.hist_x_e is not None) or (self.hist_x_g_select is not None)or (self.hist_x_e_select is not None):
+            print 'we redo histograms, because of the shift'
+            self.make_histograms()
+
 
         self.threshold = 0
 
@@ -1007,30 +1029,40 @@ class SSResult:
         g_crop_s = -self.sign_ge
         e_crop_s = self.sign_ge
 
-        self.x_g_hist = Histogram(self.x_g, nbins = nbins)
-        self.x_g_hist.fit(self.threshold, g_crop_s)
-        self.x_e_hist = Histogram(self.x_e, nbins = nbins)
-        self.x_e_hist.fit(self.threshold, e_crop_s)
+        self.hist_x_g = Histogram(self.x_g, nbins = nbins)
+        self.hist_x_g.fit(self.threshold, g_crop_s)
+        self.hist_x_e = Histogram(self.x_e, nbins = nbins)
+        self.hist_x_e.fit(self.threshold, e_crop_s)
         print 'x_g, x_e histograms was made'
+
+        ### set a new center
+        self.center_x_g = self.hist_x_g.gauss_param[0]
+        self.center_x_e = self.hist_x_e.gauss_param[0]
+        print 'new center setted:', self.center_x_g, ' ', self.center_x_e
 
         ### making hists and fit for x_g_pre & x_e_pre ###
         if self.x_g_pre is not None:
-            self.x_g_pre_hist = Histogram(self.x_g_pre, nbins = nbins)
+            self.hist_x_g_pre = Histogram(self.x_g_pre, nbins = nbins)
             print 'x_g_pre histogram was made'
         if self.x_e_pre is not None:
-            self.x_e_pre_hist = Histogram(self.x_e_pre, nbins = nbins)
+            self.hist_x_e_pre = Histogram(self.x_e_pre, nbins = nbins)
             print 'x_e_pre histogram was made'
 
         ### making hists and fit for x_g_selected & x_e_selected ###
         if self.x_g_select is not None:
-            self.x_g_select_hist = Histogram(self.x_g_select, nbins = nbins)
-            self.x_g_select_hist.fit(self.threshold, g_crop_s)
+            self.hist_x_g_select = Histogram(self.x_g_select, nbins = nbins)
+            self.hist_x_g_select.fit(self.threshold, g_crop_s)
             print 'x_g_sel histogram was made'
+            ### reset a new center
+            self.center_x_g = self.hist_x_g_select.gauss_param[0]
 
         if self.x_e_select is not None:
-            self.x_e_select_hist = Histogram(self.x_e_select, nbins = nbins)
-            self.x_e_select_hist.fit(self.threshold, e_crop_s)
+            self.hist_x_e_select = Histogram(self.x_e_select, nbins = nbins)
+            self.hist_x_e_select.fit(self.threshold, e_crop_s)
             print 'x_e_sel histogram was made'
+            ### reset a new center
+            self.center_x_e = self.hist_x_e_select.gauss_param[0]
+            print 'new center setted:', self.center_x_g, ' ', self.center_x_e
 
 
         ### making hists and fit for x_g_pre & x_e_pre ###
@@ -1149,6 +1181,12 @@ class SSResult:
             im_g_p = self.y_g_pre
             re_e_p = self.x_e_pre
             im_e_p = self.y_e_pre
+            ### setting centers from fitted gauss
+            if centers is None:
+                if (self.center_x_g is not None) and (self.center_x_e is not None):
+                        [c_re_g, c_im_g, c_re_e, c_im_e ] = [ self.center_x_g, 0, self.center_x_e, 0  ]
+            else:
+                [c_re_g, c_im_g, c_re_e, c_im_e ] = centers
         else:
             if (self.re_g is None) or (self.im_g is None) or (self.re_e is None) or (self.im_e is None):
                 print 'It is no raw data. \n loading...'
@@ -1166,6 +1204,12 @@ class SSResult:
             im_g_p = self.im_g_pre
             re_e_p = self.re_e_pre
             im_e_p = self.im_e_pre
+
+            if centers is None:
+                [c_re_g, c_im_g, c_re_e, c_im_e ] = centers_two_blobs(re_g, im_g, re_e, im_e)
+            else:
+                [c_re_g, c_im_g, c_re_e, c_im_e ] = centers
+
         ### SET CUSTOM FONT ###
         #1
         # plt.rc('font', family = 'DejaVuSans')
@@ -1271,10 +1315,7 @@ class SSResult:
             if savepath == '':
                 savepath='savings\\'
 
-        if centers is None:
-            [c_re_g, c_im_g, c_re_e, c_im_e ] = centers_two_blobs(re_g, im_g, re_e, im_e)
-        else:
-            [c_re_g, c_im_g, c_re_e, c_im_e ] = centers
+
 
         ### find angle 2*alpha (angle between two blolbs according to void-state)
         angle_between_blobs = angle_three_points(c_re_g,c_im_g, void_re_mv,void_im_mv, c_re_e,c_im_e)
@@ -1416,6 +1457,8 @@ class SSResult:
             color_post = my_colors_dict['blob_post']
             color_fit_g = my_colors_dict['g_state_mark']
             color_fit_e = my_colors_dict['e_state_mark']
+            color_g_mean = my_colors_dict['g_state_mark']
+            color_e_mean = my_colors_dict['e_state_mark']
 
             # color_dist =    my_colors_dict['deus_ex_gold']
             # color_zero = my_colors_dict['meduza_gold']
@@ -1516,20 +1559,24 @@ class SSResult:
         if self.threshold is not None:
             plt.axvline(x=self.threshold, alpha=th_alpha, c=th_color, lw=th_width, ls=th_linestyle)
 
+        if (self.center_x_g is not None) and (self.center_x_e is not None):
+            plt.axvline(x=self.center_x_g, alpha=th_alpha, c=color_g_mean, lw=th_width, ls=th_linestyle)
+            plt.axvline(x=self.center_x_e, alpha=th_alpha, c=color_e_mean, lw=th_width, ls=th_linestyle)
+
         if regime == 'raw_data':
             print 'regime: raw_data'
             #### plot x_g, x_e hists ####
-            if (self.x_g_hist.hist_xy is not None) and (self.x_e_hist.hist_xy is not None):
-                hist_g   = self.x_g_hist.hist_xy
-                hist_e   = self.x_e_hist.hist_xy
+            if (self.hist_x_g.hist_xy is not None) and (self.hist_x_e.hist_xy is not None):
+                hist_g   = self.hist_x_g.hist_xy
+                hist_e   = self.hist_x_e.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
                 plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_g, label='Read g-state')
                 plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_e, label='Read e-state')
 
             #### plot fit hists ####
-            if (self.x_g_hist.gauss_fit is not None) and (self.x_e_hist.gauss_fit is not None):
-                hist_g  = self.x_g_hist.gauss_fit
-                hist_e  = self.x_e_hist.gauss_fit
+            if (self.hist_x_g.gauss_fit is not None) and (self.hist_x_e.gauss_fit is not None):
+                hist_g  = self.hist_x_g.gauss_fit
+                hist_e  = self.hist_x_e.gauss_fit
                 # maxval = np.max([ maxval, np.max(hist_g_fit[0]), np.max(hist_e_fit[0]) ])
                 plt.plot(hist_g[1], hist_g[0], lw=1, color=color_fit_g, label='fit g-state')
                 plt.plot(hist_e[1], hist_e[0], lw=1, color=color_fit_e, label='fit e-state')
@@ -1537,25 +1584,25 @@ class SSResult:
         elif regime == 'raw_data_and_pre':
             print 'regime: raw_data_and_pre'
             #### plot PREPULSE hists ####
-            if (self.x_g_pre_hist is not None) and (self.x_e_pre_hist is not None):
-                hist_g  = self.x_g_pre_hist.hist_xy
-                hist_e  = self.x_e_pre_hist.hist_xy
+            if (self.hist_x_g_pre is not None) and (self.hist_x_e_pre is not None):
+                hist_g  = self.hist_x_g_pre.hist_xy
+                hist_e  = self.hist_x_e_pre.hist_xy
                 # maxval = np.max([ maxval, np.max(hist_g_fit[0]), np.max(hist_e_fit[0]) ])
                 plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_post, label='Prepulse g-state')
                 plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_post, label='Prepulse e-state')
 
             #### plot x_g, x_e hists ####
-            if (self.x_g_hist.hist_xy is not None) and (self.x_e_hist.hist_xy is not None):
-                hist_g   = self.x_g_hist.hist_xy
-                hist_e   = self.x_e_hist.hist_xy
+            if (self.hist_x_g.hist_xy is not None) and (self.hist_x_e.hist_xy is not None):
+                hist_g   = self.hist_x_g.hist_xy
+                hist_e   = self.hist_x_e.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
                 plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_g, label='Read g-state')
                 plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_e, label='Read e-state')
 
             #### plot fit hists ####
-            if (self.x_g_hist.gauss_fit is not None) and (self.x_e_hist.gauss_fit is not None):
-                hist_g  = self.x_g_hist.gauss_fit
-                hist_e  = self.x_e_hist.gauss_fit
+            if (self.hist_x_g.gauss_fit is not None) and (self.hist_x_e.gauss_fit is not None):
+                hist_g  = self.hist_x_g.gauss_fit
+                hist_e  = self.hist_x_e.gauss_fit
                 # maxval = np.max([ maxval, np.max(hist_g_fit[0]), np.max(hist_e_fit[0]) ])
                 plt.plot(hist_g[1], hist_g[0], lw=1, color=color_fit_g, label='Fit g-state')
                 plt.plot(hist_e[1], hist_e[0], lw=1, color=color_fit_e, label='Fit e-state')
@@ -1564,17 +1611,17 @@ class SSResult:
         elif regime=='selected':
             print 'regime: selected'
             #### plot x_g, x_e hists  SELECTED ####
-            if (self.x_g_select_hist.hist_xy is not None) and (self.x_e_select_hist.hist_xy is not None):
-                hist_g   = self.x_g_select_hist.hist_xy
-                hist_e   = self.x_e_select_hist.hist_xy
+            if (self.hist_x_g_select.hist_xy is not None) and (self.hist_x_e_select.hist_xy is not None):
+                hist_g   = self.hist_x_g_select.hist_xy
+                hist_e   = self.hist_x_e_select.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
                 plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_g, label='Selected g-state')
                 plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_e, label='Selected e-state')
 
             #### plot fit hists ####
-            if (self.x_g_select_hist.gauss_fit is not None) and (self.x_e_select_hist.gauss_fit is not None):
-                hist_g  = self.x_g_select_hist.gauss_fit
-                hist_e  = self.x_e_select_hist.gauss_fit
+            if (self.hist_x_g_select.gauss_fit is not None) and (self.hist_x_e_select.gauss_fit is not None):
+                hist_g  = self.hist_x_g_select.gauss_fit
+                hist_e  = self.hist_x_e_select.gauss_fit
                 # maxval = np.max([ maxval, np.max(hist_g_fit[0]), np.max(hist_e_fit[0]) ])
                 plt.plot(hist_g[1], hist_g[0], lw=1, color=color_fit_g, label='Fit g-state selected')
                 plt.plot(hist_e[1], hist_e[0], lw=1, color=color_fit_e, label='Fit e-state selected')
@@ -1583,17 +1630,17 @@ class SSResult:
         elif regime=='raw_and_selected':
             print 'regime==raw_and_selected'
             #### plot x_g, x_e hists  SELECTED ####
-            if (self.x_g_select_hist.hist_xy is not None) and (self.x_e_select_hist.hist_xy is not None):
-                hist_g   = self.x_g_select_hist.hist_xy
-                hist_e   = self.x_e_select_hist.hist_xy
+            if (self.hist_x_g_select.hist_xy is not None) and (self.hist_x_e_select.hist_xy is not None):
+                hist_g   = self.hist_x_g_select.hist_xy
+                hist_e   = self.hist_x_e_select.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
                 plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_post, label='Selected g-state')
                 plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_post, label='Selected e-state')
 
             #### plot x_g, x_e hists ####
-            if (self.x_g_hist.hist_xy is not None) and (self.x_e_hist.hist_xy is not None):
-                hist_g   = self.x_g_hist.hist_xy
-                hist_e   = self.x_e_hist.hist_xy
+            if (self.hist_x_g.hist_xy is not None) and (self.hist_x_e.hist_xy is not None):
+                hist_g   = self.hist_x_g.hist_xy
+                hist_e   = self.hist_x_e.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
                 plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_g, label='Read g-state')
                 plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_e, label='Read e-state')
