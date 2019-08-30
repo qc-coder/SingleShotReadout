@@ -772,6 +772,13 @@ class SSResult:
         self.y_g_pre        = im_g_pre
         self.y_e_pre        = im_e_pre
 
+        ### new centers:
+        [c_x_g, c_y_g, c_x_e, c_y_e ] = centers_two_blobs(self.x_g, self.y_g, self.x_e, self.y_e)
+
+        self.center_x_g = c_x_g
+        self.center_x_e = c_x_e
+        print 'new center of blobs: ', self.center_x_g, ' ', self.center_x_e
+
         print 'data was normalised and saved'
         return True
 
