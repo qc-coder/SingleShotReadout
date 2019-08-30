@@ -514,7 +514,7 @@ class SSResult:
     x_e_pre     = None
     y_g         = None
     y_e         = None
-    y_g_pre     = None
+    y_g_pcalculate_fidelity_postre     = None
     y_e_pre     = None
 
     ### Normalised Data after Postselection ###
@@ -552,6 +552,8 @@ class SSResult:
     ### centers of blobs (in first approximation - np.mean, after taken from gauss fit)
     center_x_g = None
     center_x_e = None
+    center_x_g_select = None # it is different. I dont know why yet
+    center_x_e_select = None
 
     # ### for future - need a back rotation #(normalisation)^-1
     # center_re_g = None
@@ -875,6 +877,24 @@ class SSResult:
         print 'threshold set'
         return True
 
+    ### just to check one thing
+    ### maybe there is a reason to redefine the threshold for postselected data
+    ### no. Just threshold was not so precise
+    def get_fro_vs_threshold(self, x_g, x_e, threshold):
+        '''
+        Simplest function to calculate only f_ro for given threshold value
+        Calculate fidelity for given value of THRESHOLD
+        Takes 1D arrays of normalized g and e results. ( re_g & re_e )
+        return only value of f_ro = 1. - 0.5*(p_ge + p_eg)
+        '''
+        dict_count = get_count_states(x_g,x_e,threshold)
+        p_ge = dict_count['p_ge']
+        p_eg = dict_count['p_eg']
+        f_ro = 1. - 0.5*(p_ge + p_eg)
+        return f_ro
+
+    ##########################
+
     def shift_x_to_threshold_be_zero(self):
         '''
         Search the best threshold value and shift the data on it
@@ -1019,7 +1039,7 @@ class SSResult:
         '''
         ########################################################################
 
-        ### making hists and fit for x_g & x_e ###
+        ### if no data - load it
         if self.x_g is None or self.x_e is None:
             success_norm = self.make_norm_data_from_raw()
             success_th = self.set_best_threshold()      #if we load new norm data - we need to redefine a threshold
@@ -1027,6 +1047,7 @@ class SSResult:
                 print 'can not normalise or set threshold. error of make_histograms()'
                 return False
 
+        ### if no threshold - find one
         if self.threshold is None:
             success_th = self.set_best_threshold()
             if not success_th:
@@ -1036,6 +1057,7 @@ class SSResult:
         g_crop_s = -self.sign_ge
         e_crop_s = self.sign_ge
 
+        ### making hists and fit for x_g & x_e ###
         self.hist_x_g = Histogram(self.x_g, nbins = nbins)
         self.hist_x_g.fit(self.threshold, g_crop_s)
         self.hist_x_e = Histogram(self.x_e, nbins = nbins)
@@ -1061,15 +1083,15 @@ class SSResult:
             self.hist_x_g_select.fit(self.threshold, g_crop_s)
             print 'x_g_sel histogram was made'
             ### reset a new center
-            self.center_x_g = self.hist_x_g_select.gauss_param[0]
+            self.center_x_g_select = self.hist_x_g_select.gauss_param[0]
 
         if self.x_e_select is not None:
             self.hist_x_e_select = Histogram(self.x_e_select, nbins = nbins)
             self.hist_x_e_select.fit(self.threshold, e_crop_s)
             print 'x_e_sel histogram was made'
             ### reset a new center
-            self.center_x_e = self.hist_x_e_select.gauss_param[0]
-            print 'new center setted:', self.center_x_g, ' ', self.center_x_e
+            self.center_x_e_select = self.hist_x_e_select.gauss_param[0]
+            print 'new center selected setted:', self.center_x_g_select, ' ', self.center_x_e_select
 
 
         ### making hists and fit for x_g_pre & x_e_pre ###
@@ -1110,8 +1132,22 @@ class SSResult:
         f_g_post  = 1. - p_ge_post
         f_e_post  = 1. - p_eg_post
 
+        #####___SAVING_RESULT____#############
+        self.dict_fidelity['F']         = f_ro
+        self.dict_fidelity['F_g']       = f_g
+        self.dict_fidelity['F_e']       = f_e
+        self.dict_fidelity['F_post']    = f_ro_post
+        self.dict_fidelity['F_post_g']  = f_g_post
+        self.dict_fidelity['F_post_e']  = f_e_post
+        # self.dict_fidelity['F_gaus' ]   =
+        # self.dict_fidelity['F_gaus_eg'] =
+        # self.dict_fidelity['F_gaus_ge'] =
+        # self.dict_fidelity['Err_e']     =
+        # self.dict_fidelity['Err_g']     =
+
 
         #### TEMPORARY RETURN FAST ###
+        # return True
         return f_ro
 
     def erase_data(self, data_to_erase):
@@ -1566,12 +1602,11 @@ class SSResult:
         if self.threshold is not None:
             plt.axvline(x=self.threshold, alpha=th_alpha, c=th_color, lw=th_width, ls=th_linestyle)
 
-        if (self.center_x_g is not None) and (self.center_x_e is not None):
-            plt.axvline(x=self.center_x_g, alpha=th_alpha, c=color_g_mean, lw=th_width, ls=th_linestyle)
-            plt.axvline(x=self.center_x_e, alpha=th_alpha, c=color_e_mean, lw=th_width, ls=th_linestyle)
-
         if regime == 'raw_data':
             print 'regime: raw_data'
+            if (self.center_x_g is not None) and (self.center_x_e is not None):
+                plt.axvline(x=self.center_x_g, alpha=th_alpha, c=color_g_mean, lw=th_width, ls=th_linestyle)
+                plt.axvline(x=self.center_x_e, alpha=th_alpha, c=color_e_mean, lw=th_width, ls=th_linestyle)
             #### plot x_g, x_e hists ####
             if (self.hist_x_g.hist_xy is not None) and (self.hist_x_e.hist_xy is not None):
                 hist_g   = self.hist_x_g.hist_xy
@@ -1590,6 +1625,9 @@ class SSResult:
 
         elif regime == 'raw_data_and_pre':
             print 'regime: raw_data_and_pre'
+            if (self.center_x_g is not None) and (self.center_x_e is not None):
+                plt.axvline(x=self.center_x_g, alpha=th_alpha, c=color_g_mean, lw=th_width, ls=th_linestyle)
+                plt.axvline(x=self.center_x_e, alpha=th_alpha, c=color_e_mean, lw=th_width, ls=th_linestyle)
             #### plot PREPULSE hists ####
             if (self.hist_x_g_pre is not None) and (self.hist_x_e_pre is not None):
                 hist_g  = self.hist_x_g_pre.hist_xy
@@ -1616,6 +1654,10 @@ class SSResult:
 
 
         elif regime=='selected':
+            if (self.center_x_g_select is not None) and (self.center_x_e_select is not None):
+                plt.axvline(x=self.center_x_g_select, alpha=th_alpha, c=color_g_mean, lw=th_width, ls=th_linestyle)
+                plt.axvline(x=self.center_x_e_select, alpha=th_alpha, c=color_e_mean, lw=th_width, ls=th_linestyle)
+
             print 'regime: selected'
             #### plot x_g, x_e hists  SELECTED ####
             if (self.hist_x_g_select.hist_xy is not None) and (self.hist_x_e_select.hist_xy is not None):
@@ -1635,6 +1677,9 @@ class SSResult:
 
 
         elif regime=='raw_and_selected':
+            if (self.center_x_g_select is not None) and (self.center_x_e_select is not None):
+                plt.axvline(x=self.center_x_g_select, alpha=th_alpha, c=color_g_mean, lw=th_width, ls=th_linestyle)
+                plt.axvline(x=self.center_x_e_select, alpha=th_alpha, c=color_e_mean, lw=th_width, ls=th_linestyle)
             print 'regime==raw_and_selected'
             #### plot x_g, x_e hists  SELECTED ####
             if (self.hist_x_g_select.hist_xy is not None) and (self.hist_x_e_select.hist_xy is not None):
