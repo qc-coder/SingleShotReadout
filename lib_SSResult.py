@@ -572,15 +572,24 @@ class SSResult:
     }
     ### Fidelity dictionary ###
     dict_fidelity = {
-    'F':0, 'F_g':0, 'F_e':0, 'F_post':0,'F_post_g':0, 'F_post_e':0,
-     'F_gaus':0, 'F_gaus_eg':0,'F_gaus_ge':0, 'Err_e':0, 'Err_g':0
+    'F'         : 0,
+    'F_g'       : 0,
+    'F_e'       : 0,
+    'F_post'    : 0,
+    'F_post_g'  : 0,
+    'F_post_e'  : 0,
+    'F_gaus'    : 0,
+    'F_gaus_eg' : 0,
+    'F_gaus_ge' : 0,
+    'Err_e'     : 0,
+    'Err_g'     : 0
     }
 
     ############################################################################
     ############################################################################
     #### METHODS ###############################################################
 
-    def __init__(self, datafile, paramfile=''):
+    def __init__(self, datafile, paramfile='', nbins=100):
 
         def get_timestamp(filename):
             '''
@@ -640,41 +649,87 @@ class SSResult:
 
             return par_dict
 
+        ########################################################################
+        # set up metadata
         self.datafile = datafile
-        self.timestamp = get_timestamp(datafile)
-
-        raw_data_ss = np.loadtxt(datafile)
-        self.re_g     = raw_data_ss[:,0]
-        self.im_g     = raw_data_ss[:,1]
-        self.re_e     = raw_data_ss[:,2]
-        self.im_e     = raw_data_ss[:,3]
-        self.re_g_pre = raw_data_ss[:,4]
-        self.im_g_pre = raw_data_ss[:,5]
-        self.re_e_pre = raw_data_ss[:,6]
-        self.im_e_pre = raw_data_ss[:,7]
-
         self.paramfile = paramfile
+        self.timestamp = get_timestamp(datafile)
         self.dict_param = get_parameters(paramfile)
-        # self.dict_fidelity = self.calculate_fidelity_post(smrt_thrshd=True)
+
+        # set up data measurement
+        self.load_data(datafile)
+
+        # normalize it
+        self.make_norm_data_from_raw()
+
+        # find the best threshold and shift the data
+        self.set_best_threshold()
+        self.shift_x_to_threshold_be_zero()
+
+        # do postselection
+        self.make_postselected_data_from_norm()
+
+        # make histograms
+        self.make_histograms(nbins = nbins)
+
 
         print 'Object is created'
 
     ### Process data methods ###
+    def load_data(self, datafile):
+        '''
+        function open file and create data sequences
+        '''
+        try:
+            raw_data_ss = np.loadtxt(datafile)
+            self.re_g     = raw_data_ss[:,0]
+            self.im_g     = raw_data_ss[:,1]
+            self.re_e     = raw_data_ss[:,2]
+            self.im_e     = raw_data_ss[:,3]
+            self.re_g_pre = raw_data_ss[:,4]
+            self.im_g_pre = raw_data_ss[:,5]
+            self.re_e_pre = raw_data_ss[:,6]
+            self.im_e_pre = raw_data_ss[:,7]
+            print 'data loaded'
+            return True
+        except:
+            print 'Warning load_data() error!'
+            print 'can not load file: ', datafile
+            return False
+
     def make_norm_data_from_raw(self):
         '''
         Make a normalisation of data on the axis between g_mean and e_mean values
         Write new data as object parameters
+        Also make histograms of normalised data
         Returns True if finished
         '''
-        re_g = self.re_g
-        im_g = self.im_g
-        re_e = self.re_e
-        im_e = self.im_e
+        ### check if it is data. if not - try to load from file
+        if (self.re_g is not None) and (self.im_g is not None) and (self.re_e is not None) and (self.im_e is not None):
+            re_g = self.re_g
+            im_g = self.im_g
+            re_e = self.re_e
+            im_e = self.im_e
+        else:
+            print 'It is no raw data. \n loading...'
+            success_load = self.load_data(self.datafile)
+            if not success_load:
+                print 'load was not successful. Sheck datafile'
+                return False
+            re_g = self.re_g
+            im_g = self.im_g
+            re_e = self.re_e
+            im_e = self.im_e
+
         ### ----
-        re_g_pre = self.re_g_pre
-        im_g_pre = self.im_g_pre
-        re_e_pre = self.re_e_pre
-        im_e_pre = self.im_e_pre
+        if self.re_g_pre is not None:
+            re_g_pre = self.re_g_pre
+        if self.im_g_pre is not None:
+            im_g_pre = self.im_g_pre
+        if self.re_e_pre is not None:
+            re_e_pre = self.re_e_pre
+        if self.im_e_pre is not None:
+            im_e_pre = self.im_e_pre
 
         ##########______NORMALIZATION________###################################
         ### find centers of blobs
@@ -714,7 +769,8 @@ class SSResult:
         '''
         Find best threshold,
         set it t oobject
-        and return it
+        also calculate set self.dict_count values
+        returns True if all good
         '''
         ###---
         def get_best_threshold(x_g, x_e, th0, delta0, permiss=1e-4, fragment=40, previous_fid=None):
@@ -781,7 +837,10 @@ class SSResult:
         ###---
         ##########______NORMALIZE IF NECESSARY_____#############################
         if (self.x_g is None) or (self.x_e is None):
-            self.make_norm_data_from_raw()
+            success_norm = self.make_norm_data_from_raw()
+            if not success_norm:
+                print 'can not normalise. error of setting threshold'
+                return False
 
         ##########______THRESHOLD_____##########################################
         ### Find best threshold value ###
@@ -793,9 +852,11 @@ class SSResult:
 
         ##########______SET AND RETURN_____#####################################
         self.threshold = threshold
-        dict_count = get_count_states(self.x_g,self.x_e, threshold)
-        self.sign_ge = dict_count['sign_ge']
-        return threshold
+        self.dict_count = get_count_states(self.x_g,self.x_e, self.threshold)
+        self.sign_ge = self.dict_count['sign_ge']
+
+        print 'threshold set'
+        return True
 
     def shift_x_to_threshold_be_zero(self):
         '''
@@ -803,15 +864,20 @@ class SSResult:
         returns threshold value, that was founded and used for shift
         '''
         if (self.x_g is None) or (self.x_e is None):
-            print 'Warning! make_postselected_data_from_norm(); no data to postselect'
-            return False
+            success_norm = self.make_norm_data_from_raw()
+            success_th = self.set_best_threshold()      #if we load new norm data - we need to redefine a threshold
+            if (not success_norm) or (not success_th):
+                print 'can not normalise or set threshold. error of shift_x_to_threshold_be_zero'
+                return False
 
         if self.threshold is None:
-            print 'threshold have not been defined yet'
-            return False
+            success_th = self.set_best_threshold()
+            if not success_th:
+                print 'can not set threshold. error of shift_x_to_threshold_be_zero'
+                return False
 
         if self.threshold == 0:
-            print 'Its already == 0'
+            print 'Threshold is already zero'
             return True
 
         ###  NOW SHIFT THE NORMALIZED DATA FOR THRESHOLD TO BE ZERO ###
@@ -844,24 +910,31 @@ class SSResult:
 
         self.threshold = 0
 
+        print 'x-data shifted. threshold=0'
         return True
 
     def make_postselected_data_from_norm(self):
         '''
         Do the postselection. Threshold usually=0 because we did set_best_threshold_as_zero() before
+        also calculate and set dict_count_select
         '''
         if self.threshold is None:
-            print 'threshold have not been defined yet'
-            return False
+            success_th = self.set_best_threshold()
+            if not success_th:
+                print 'threshold have not been defined yet'
+                return False
 
         threshold = self.threshold
 
         if (self.x_g is None) or (self.x_e is None) or (self.x_g_pre is None) or (self.x_e_pre is None):
-            print 'Warning! make_postselected_data_from_norm(); no data to postselect'
-            return False
+            success_norm = self.make_norm_data_from_raw()
+            success_th = self.set_best_threshold()      #if we load new norm data - we need to redefine a threshold
+            if (not success_norm) or (not success_th):
+                print 'can not Postselect. error of normalisation or setting threshold'
+                return False
 
         if ( len(self.x_g) != len(self.x_g_pre) ) or ( len(self.x_e) != len(self.x_e_pre) ):
-            print 'Warning! Size is not the same  make_postselected_data_from_norm()'
+            print 'ERROR make_postselected_data_from_norm(): Size of x_g,x_e,x_g_pre,x_e_pre is not the same  '
             return False
 
 
@@ -901,8 +974,14 @@ class SSResult:
 
         self.x_g_select = x_g_selected
         self.x_e_select = x_e_selected
+        self.dict_count_select = get_count_states(self.x_g_select, self.x_e_select, self.threshold)
 
-        return [index_g_wrong, index_e_wrong]
+        # return [index_g_wrong, index_e_wrong]  ### could be usefull for delete exact points from raw data also
+        ### if you wanna do it -- do it right here, in this function
+        ## RIGHT HERE ##
+
+        print 'postselection done'
+        return True
 
     def make_histograms(self, nbins=100):
         '''
@@ -910,13 +989,20 @@ class SSResult:
         of fit the gauss and plot it (remove this part)
         '''
         ########################################################################
-        if self.threshold is None:
-            print 'threshold have not been defined yet'
-            return False
 
         ### making hists and fit for x_g & x_e ###
         if self.x_g is None or self.x_e is None:
-            self.make_norm_data_from_raw()
+            success_norm = self.make_norm_data_from_raw()
+            success_th = self.set_best_threshold()      #if we load new norm data - we need to redefine a threshold
+            if (not success_norm) or (not success_th):
+                print 'can not normalise or set threshold. error of make_histograms()'
+                return False
+
+        if self.threshold is None:
+            success_th = self.set_best_threshold()
+            if not success_th:
+                print 'can not set threshold. error of make_histograms()'
+                return False
 
         g_crop_s = -self.sign_ge
         e_crop_s = self.sign_ge
@@ -925,22 +1011,26 @@ class SSResult:
         self.x_g_hist.fit(self.threshold, g_crop_s)
         self.x_e_hist = Histogram(self.x_e, nbins = nbins)
         self.x_e_hist.fit(self.threshold, e_crop_s)
+        print 'x_g, x_e histograms was made'
 
         ### making hists and fit for x_g_pre & x_e_pre ###
         if self.x_g_pre is not None:
             self.x_g_pre_hist = Histogram(self.x_g_pre, nbins = nbins)
-
+            print 'x_g_pre histogram was made'
         if self.x_e_pre is not None:
             self.x_e_pre_hist = Histogram(self.x_e_pre, nbins = nbins)
+            print 'x_e_pre histogram was made'
 
         ### making hists and fit for x_g_selected & x_e_selected ###
         if self.x_g_select is not None:
             self.x_g_select_hist = Histogram(self.x_g_select, nbins = nbins)
             self.x_g_select_hist.fit(self.threshold, g_crop_s)
+            print 'x_g_sel histogram was made'
 
         if self.x_e_select is not None:
             self.x_e_select_hist = Histogram(self.x_e_select, nbins = nbins)
             self.x_e_select_hist.fit(self.threshold, e_crop_s)
+            print 'x_e_sel histogram was made'
 
 
         ### making hists and fit for x_g_pre & x_e_pre ###
@@ -952,30 +1042,27 @@ class SSResult:
         New version of fidelity calculator.
         Smart threshold by default (no fit, just bruteforce)
         '''
-        ########___DO NORMALIZATION IF HAVE NOT DONE YET___#####################
-        if (self.x_g is None) or (self.x_e is None):
-            self.make_norm_data_from_raw()
-
-        ### Set best threshold as a zero ###
-        self.set_best_threshold()
-        self.shift_x_to_threshold_be_zero()
-
-        ### count states with this threshold ###
-        self.dict_count = get_count_states(self.x_g, self.x_e, 0)
+        ### load dictionary with p_ij raw
+        if (self.dict_count['p_gg'] ==0) or (self.dict_count['p_ge'] ==0) or (self.dict_count['p_eg'] ==0) or (self.dict_count['p_ee'] ==0):
+            print 'Error of calculate_fidelity_post(): no data in dict_count'
+            return None
+        ### count states from raw data ###
         p_gg = self.dict_count['p_gg']
         p_ge = self.dict_count['p_ge']
         p_eg = self.dict_count['p_eg']
         p_ee = self.dict_count['p_ee']
-        ### do the postselection ###
-        self.make_postselected_data_from_norm()
 
+        ### load dictionary with p_ij selected
+        if (self.dict_count_select['p_gg'] ==0) or (self.dict_count_select['p_ge'] ==0) or (self.dict_count_select['p_eg'] ==0) or (self.dict_count_select['p_ee'] ==0):
+            print 'Error of calculate_fidelity_post(): no data in dict_count'
+            return None
         ### count states with postselection ###
-        self.dict_count_select = get_count_states(self.x_g_select, self.x_e_select, 0)
         p_gg_post = self.dict_count_select['p_gg']
         p_ge_post = self.dict_count_select['p_ge']
         p_eg_post = self.dict_count_select['p_eg']
         p_ee_post = self.dict_count_select['p_ee']
 
+        ### calculate fidelities
         f_ro = 1. - 0.5*(p_ge + p_eg)
         f_g  = 1. - p_ge    #fid of preparation |g> state
         f_e  = 1. - p_eg
@@ -985,18 +1072,71 @@ class SSResult:
         f_e_post  = 1. - p_eg_post
 
 
-
         #### TEMPORARY RETURN FAST ###
         return f_ro
 
+    def erase_data(self, data_to_erase):
+        '''
+        Function to get free memory.
+        Erase the data of object after calculations was done
+        parameter data_to_erase:
+            'raw' - delete re_g, re_e, im_g, im_e and pre-selections re,im
+            'norm'- delete x_g, x_e, y_g, y_e, and pre-selections x,y
+            'pre' - delete only results of pre-pulses: re_g_pre, x_g_pre..
+            'select' - delete selectde data
+        '''
+        if data_to_erase == 'raw':
+            self.re_g = None
+            self.re_e = None
+            self.im_g = None
+            self.im_e = None
+            self.re_g_pre = None
+            self.re_e_pre = None
+            self.im_g_pre = None
+            self.im_e_pre = None
+            print '__Raw data erased!'
+        elif data_to_erase == 'norm':
+            self.x_g = None
+            self.x_e = None
+            self.y_g = None
+            self.y_e = None
+            self.x_g_pre = None
+            self.x_e_pre = None
+            self.y_g_pre = None
+            self.y_e_pre = None
+            print '__Normed data erased!'
+        elif data_to_erase == 'pre':
+            self.re_g_pre = None
+            self.re_e_pre = None
+            self.im_g_pre = None
+            self.im_e_pre = None
+            self.x_g_pre = None
+            self.x_e_pre = None
+            self.y_g_pre = None
+            self.y_e_pre = None
+            print '__Pre-pulse data erased!'
+        elif data_to_erase == 'select':
+            x_g_select  = None
+            x_e_select  = None
+            y_g_select  = None
+            y_e_select  = None
+            print '__Selected data erased!'
+        elif data_to_erase == 'all':
+            self.erase_data(data_to_erase='raw')
+            self.erase_data(data_to_erase='norm')
+            self.erase_data(data_to_erase='select')
+        else:
+            print '__Nothing erased. Check the parameter'
+
+        return True
+
     ### Drawing methods ###
-    def plot_scatter_two_blob(self, centers=None, save=False, fname='Two_blob', savepath='', show=False, limits=[None,None,None,None], crop=True, fig_transp = False, normalized=False, dark=False, title_str=None, font=None, zero_on_plot=False, renorm=False):
+    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, fname='Two_blob', savepath='', show=False, limits=[None,None,None,None], crop=True, fig_transp = False, dark=False, title_str=None, font=None, zero_on_plot=False):
         '''
         Plots diagramm of scattering for two blobs on the i-q plane
         returns limits of axis (it is used for histograms)
         '''
-
-        if renorm:
+        if norm:
             if (self.x_g is None) or (self.x_e is None):
                 self.make_norm_data_from_raw()    ### do renormalization
             void_re_mv = self.x_void_mv
@@ -1010,6 +1150,12 @@ class SSResult:
             re_e_p = self.x_e_pre
             im_e_p = self.y_e_pre
         else:
+            if (self.re_g is None) or (self.im_g is None) or (self.re_e is None) or (self.im_e is None):
+                print 'It is no raw data. \n loading...'
+                success_load = self.load_data(self.datafile)
+                if not success_load:
+                    print 'load was not successful'
+                    return None
             void_re_mv = self.void_re_mv
             void_im_mv = self.void_im_mv
             re_g     = self.re_g
@@ -2038,14 +2184,11 @@ class SSResult:
 
         nop = 200.
         [leftlim, rightlim, rabbish1, rabbish2 ] = crop_fluctuations(self.x_g, [0] , self.x_e, [0], 0, 0 )
-        # step = abs(rightlim - leftlim) / nop
-        # thr_vector = np.arange(leftlim, rightlim, step)
         thr_vector = np.linspace(leftlim, rightlim, nop)
 
         fid_vector = []
         for thr in thr_vector:
             fid_vector.append( get_fro_vs_threshold(x_g, x_e, thr) )
-
 
         pic = plt.figure()
         # plt.xlim(xmin, xmax)
