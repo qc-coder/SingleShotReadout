@@ -47,6 +47,7 @@ def set_font(filename='Forza-Book.ttf'):
     # fname = os.path.split(fpath)[1]
 
     return prop
+
 ################################################################################
 
 ################################################################################
@@ -78,6 +79,7 @@ def where_sameside(a_arr, b, ref=0):
         result_array[i] = sameside(a_arr[i] ,b, ref=ref)
 
     return result_array
+
 ################################################################################
 
 ################################################################################
@@ -234,6 +236,7 @@ def get_count_states(x_g, x_e, threshold):
     p_right_g
     p_right_e
     sighn_ge - +1 if g less than e; or -1 if g more than e
+    p_ge = P to measure e when g was prepared
     '''
     def e_morethan_g(p_left_g, p_left_e, p_right_g, p_right_e):
         '''
@@ -311,6 +314,61 @@ def get_count_states(x_g, x_e, threshold):
     }
 
     return dict_count
+
+def get_overlap_error(gauss_p_g, gauss_p_e, threshold, sign_ge):
+    '''
+    Function to calculate gaussian overlap errors and fidelity
+    returns dictionary with errors_overlap and fidelities
+    Arguments: gauss_p_g, gauss_p_e, threshold, sign_ge
+    gauss_p_g  - parameters of gaussian fit of |g> - state
+    gauss_p_e  - parameters of gaussian fit of |e> - state
+    threshold  - threshold value
+    sign_ge    - if |g> less than |e> it is [+1]. (otherwise [-1] 0
+    '''
+    import scipy
+
+    def errfunc(x, x_c=0, sig=1.0):
+        '''
+        modification for standard error-function from scipy
+        to integrate gaussian form -infinity to x
+        And also to take into account sigma and x_center
+        '''
+        y = scipy.special.erf( (x - x_c)/sig )
+        y = 0.5 + 0.5*y
+        return y
+
+    ##################################
+
+    [x_center_g, sigma_g] = [ gauss_p_g[0], gauss_p_g[1] ]
+    [x_center_e, sigma_e] = [ gauss_p_e[0], gauss_p_e[1] ]
+
+    if sign_ge == +1:
+        error_g = 1.0 -errfunc(threshold, x_c=x_center_g, sig=sigma_g)
+        error_e =      errfunc(threshold, x_c=x_center_e, sig=sigma_e)
+
+    elif sign_ge == -1:
+        error_g =      errfunc(threshold, x_c=x_center_g, sig=sigma_g)
+        error_e = 1.0 -errfunc(threshold, x_c=x_center_e, sig=sigma_e)
+
+    else:
+        print 'Error. Something wrong with sign_ge. It must be -1 or +1'
+        error_g = 0
+        error_e = 0
+
+    f_g_over = 1.0 - error_g
+    f_e_over = 1.0 - error_e
+    f_over = 1.0 - 0.5*( error_g+ error_e )
+
+    dict_overlap = {
+        'err_o_g': error_g,
+        'err_o_e': error_e,
+        'f_o_g'  : f_g_over,
+        'f_o_e'  : f_e_over,
+        'f_o'  : f_over
+    }
+
+    return dict_overlap
+
 
 ################################################################################
 
@@ -547,7 +605,7 @@ class SSResult:
 
     ### e-g-State definition ###
     threshold = None
-    sign_ge = 1     #COULD BE +-1 depends on g>e or e>g
+    sign_ge = +1     #COULD BE +-1 depends on g>e or e>g
 
     ### centers of blobs (in first approximation - np.mean, after taken from gauss fit)
     center_x_g = None
@@ -683,6 +741,8 @@ class SSResult:
 
         # make histograms
         self.make_histograms(nbins = nbins)
+
+        self.calculate_fidelity_post()
 
 
         print 'Object is created'
@@ -876,24 +936,6 @@ class SSResult:
 
         print 'threshold set'
         return True
-
-    ### just to check one thing
-    ### maybe there is a reason to redefine the threshold for postselected data
-    ### no. Just threshold was not so precise
-    def get_fro_vs_threshold(self, x_g, x_e, threshold):
-        '''
-        Simplest function to calculate only f_ro for given threshold value
-        Calculate fidelity for given value of THRESHOLD
-        Takes 1D arrays of normalized g and e results. ( re_g & re_e )
-        return only value of f_ro = 1. - 0.5*(p_ge + p_eg)
-        '''
-        dict_count = get_count_states(x_g,x_e,threshold)
-        p_ge = dict_count['p_ge']
-        p_eg = dict_count['p_eg']
-        f_ro = 1. - 0.5*(p_ge + p_eg)
-        return f_ro
-
-    ##########################
 
     def shift_x_to_threshold_be_zero(self):
         '''
@@ -1113,6 +1155,7 @@ class SSResult:
         p_eg = self.dict_count['p_eg']
         p_ee = self.dict_count['p_ee']
 
+
         ### load dictionary with p_ij selected
         if (self.dict_count_select['p_gg'] ==0) or (self.dict_count_select['p_ge'] ==0) or (self.dict_count_select['p_eg'] ==0) or (self.dict_count_select['p_ee'] ==0):
             print 'Error of calculate_fidelity_post(): no data in dict_count'
@@ -1123,6 +1166,7 @@ class SSResult:
         p_eg_post = self.dict_count_select['p_eg']
         p_ee_post = self.dict_count_select['p_ee']
 
+
         ### calculate fidelities
         f_ro = 1. - 0.5*(p_ge + p_eg)
         f_g  = 1. - p_ge    #fid of preparation |g> state
@@ -1132,6 +1176,25 @@ class SSResult:
         f_g_post  = 1. - p_ge_post
         f_e_post  = 1. - p_eg_post
 
+
+        ## calculate gaussian overlap (using function)
+        if self.hist_x_g_select is not None:
+            ## use selected data if possible
+            g_gaus_par = self.hist_x_g_select.gauss_param
+            e_gaus_par = self.hist_x_e_select.gauss_param
+        else:
+            g_gaus_par = self.hist_x_g.gauss_param
+            e_gaus_par = self.hist_x_e.gauss_param
+
+        dict_overlap = get_overlap_error(g_gaus_par, e_gaus_par, self.threshold, self.sign_ge)
+        f_over_g    = dict_overlap['f_o_g']
+        f_over_e    = dict_overlap['f_o_e']
+        f_over_tot  = dict_overlap['f_o']
+
+        p_ge_overlap = dict_overlap['err_o_g']
+        p_eg_overlap = dict_overlap['err_o_e']
+
+
         #####___SAVING_RESULT____#############
         self.dict_fidelity['F']         = f_ro
         self.dict_fidelity['F_g']       = f_g
@@ -1139,16 +1202,18 @@ class SSResult:
         self.dict_fidelity['F_post']    = f_ro_post
         self.dict_fidelity['F_post_g']  = f_g_post
         self.dict_fidelity['F_post_e']  = f_e_post
-        # self.dict_fidelity['F_gaus' ]   =
-        # self.dict_fidelity['F_gaus_eg'] =
-        # self.dict_fidelity['F_gaus_ge'] =
-        # self.dict_fidelity['Err_e']     =
-        # self.dict_fidelity['Err_g']     =
+        self.dict_fidelity['F_gaus' ]   = f_over_tot
+        self.dict_fidelity['F_gaus_eg'] = f_over_e
+        self.dict_fidelity['F_gaus_ge'] = f_over_g
+        ### strange useless parameters: (just a tradition after Remy)
+        self.dict_fidelity['Err_e']     = p_ge_post - p_ge_overlap
+        self.dict_fidelity['Err_g']     = p_eg_post - p_eg_overlap
 
 
-        #### TEMPORARY RETURN FAST ###
-        # return True
-        return f_ro
+        #### Return ###
+        print 'Fidelity was calculated'
+        # return self.dict_fidelity
+        return True
 
     def erase_data(self, data_to_erase):
         '''
@@ -1206,7 +1271,7 @@ class SSResult:
         return True
 
     ### Drawing methods ###
-    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, fname='Two_blob', savepath='', show=False, limits=[None,None,None,None], crop=True, fig_transp = False, dark=False, title_str=None, font=None, zero_on_plot=False):
+    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=None, fname='Two_blob', savepath='', show=False, limits=[None,None,None,None], crop=True, fig_transp = False, dark=False, title_str=None, font=None, zero_on_plot=False):
         '''
         Plots diagramm of scattering for two blobs on the i-q plane
         returns limits of axis (it is used for histograms)
@@ -1403,7 +1468,20 @@ class SSResult:
         if dark:
             fname = fname + '_dark'
 
-        fig = plt.figure(fname, facecolor=fig_face_color, edgecolor = fig_border_color)
+        if figsize is None:
+            fig = plt.figure(fname, facecolor=fig_face_color, edgecolor = fig_border_color)
+        else:
+            if (type(figsize) != list):
+                print 'figsize must be a lsit'
+                return False
+            else:
+                if len(figsize) != 2:
+                    print 'figsize list must contain to numbers (x and y size)'
+                    return False
+            fig = plt.figure(fname, facecolor=fig_face_color, edgecolor = fig_border_color, figsize=(figsize[0],figsize[1]))
+
+
+        # fig = plt.figure(fname, facecolor=fig_face_color, edgecolor = fig_border_color)
         ax = fig.add_subplot(1, 1, 1) # nrows, ncols, index
         ax.set_facecolor(bg_color)
 
@@ -1479,7 +1557,7 @@ class SSResult:
 
         return fig
 
-    def plot_hists(self, regime='raw_data', dark=True, log=True, save=False, savepath='', fname='Hists', fig_transp=False, title_str='', font=None):
+    def plot_hists(self, regime='raw_data', dark=True, log=True, save=False, savepath='', fname='Hists', fig_transp=False, title_str='', font=None, figsize=None):
         '''
         function of plot histograms of object is it exists
         have different regimes:
@@ -1596,7 +1674,19 @@ class SSResult:
         ###############################################
         ### all data plot here ______________________##
         ###############################################
-        fig, ax = plt.subplots(1, 1, sharey=True, tight_layout=True, facecolor=fig_face_color, edgecolor = fig_border_color)
+        if figsize is None:
+            fig, ax = plt.subplots(1, 1, sharey=True, tight_layout=True, facecolor=fig_face_color, edgecolor = fig_border_color)
+        else:
+            if (type(figsize) != list):
+                print 'figsize must be a lsit'
+                return False
+            else:
+                if len(figsize) != 2:
+                    print 'figsize list must contain to numbers (x and y size)'
+                    return False
+            fig, ax = plt.subplots(1, 1, figsize=(figsize[0],figsize[1]), sharey=True, tight_layout=True, facecolor=fig_face_color, edgecolor = fig_border_color)
+
+
         maxval = 1 ##this variable we use for define plt.ylim()
 
         if self.threshold is not None:
@@ -1793,4 +1883,5 @@ class SSResult:
             plt.plot(thr_vector, fid_post_vector, '.')
 
         return pic
+
 ################################################################################
