@@ -21,7 +21,9 @@ my_colors_dict = {  'redberry'      :'#970000',
                     'blob_e'        :'#fd6e6e',
                     'blob_post'     :'#1b346e',
                     'g_state_mark'  :'#849cd4',
-                    'e_state_mark'  :'#fe9393'
+                    'e_state_mark'  :'#fe9393',
+                    'meduza_dark'   :'#262626',
+                    'gauss_green'   :'#bacc5f'
 
 }
 
@@ -259,6 +261,10 @@ def get_count_states(x_g, x_e, threshold):
             else:
                 return False
 
+    if ( len(x_g) <1 ) or ( len(x_e) <1 ):
+            print 'error get_count_states. No data'
+            return None
+
     #calculate how many g points are less or more than threshold value
     n_left_g  = 0
     n_right_g = 0
@@ -277,10 +283,12 @@ def get_count_states(x_g, x_e, threshold):
             n_right_e +=1
     #probabilities of g or e states been bigger or smaller than threshold
     #### DO YOU REALLY NEED PROBABILITIES NOW?
+
     p_left_g = 1.0*n_left_g / len(x_g)
     p_left_e = 1.0*n_left_e / len(x_e)
     p_right_g = 1.0*n_right_g / len(x_g)
     p_right_e = 1.0*n_right_e / len(x_e)
+
 
     ### sign ###
     # check where is e and where is g. Define P_ij
@@ -369,7 +377,16 @@ def get_overlap_error(gauss_p_g, gauss_p_e, threshold, sign_ge):
 
     return dict_overlap
 
-
+def max_possible_fid(t_read_time, T1 = 3500.):
+    '''
+    Calculate maximum possible fidelity for given t_read and T1
+    '''
+    p_ee = np.exp( -t_read_time/T1)
+    p_gg = np.exp( -t_read_time/T1)
+    p_eg = 1.0 - p_ee
+    p_ge = 1.0 - p_gg
+    F = 1.0 - 0.5*( p_ge +p_eg )
+    return F
 ################################################################################
 
 ################################################################################
@@ -572,7 +589,7 @@ class SSResult:
     x_e_pre     = None
     y_g         = None
     y_e         = None
-    y_g_pcalculate_fidelity_postre     = None
+    y_g_p       = None
     y_e_pre     = None
 
     ### Normalised Data after Postselection ###
@@ -684,65 +701,179 @@ class SSResult:
             '''
             Takes file of parameters and extract parameters values. Returns dictionary.
             '''
-            par_dict = {'freq_read':0, 'power1':0, 't_read':0, 'rudat':0, 'freq_q':0, 'power2':0, 'rudat2':0, 'tpi':0, 'nsigma':0, 'cur':0}
-            NUM_OF_VALUES = 10
-            #opening file
+            ### opening file
             try:
                 f = open(filename, "r")
                 lines = f.readlines()
                 f.close()
             except:
                 print 'Can not read the file'
+                return None
+
+            if ( len(lines)== 45 ):      ### new format of parameters file
+                par_dict = {'freq_read':0, 'power1':0, 't_read':0, 'rudat':0, 'freq_q':0, 'power2':0, 'rudat2':0, 'tpi':0, 'nsigma':0, 'cur':0}
+                NUM_OF_VALUES = 10
+
+                # extract numbers from string one by one
+                string = lines[44]
+                list_of_values_str = []
+                for i in range(NUM_OF_VALUES):
+                    ## it is 9 parameters to read
+                    cut_end = string.find('\t')
+                    str = string[ 0: cut_end ]
+                    list_of_values_str.append(float(str))
+                    string = string[ cut_end+1 : ]
+
+                #fulfill dictionary and return
+                par_dict['freq_read'] = list_of_values_str[0]
+                par_dict['power1'] =    list_of_values_str[1]
+                par_dict['t_read'] =    list_of_values_str[2]
+                par_dict['rudat']  =    list_of_values_str[3]
+                par_dict['freq_q'] =    list_of_values_str[4]
+                par_dict['power2'] =    list_of_values_str[5]
+                par_dict['rudat2'] =    list_of_values_str[6]
+                par_dict['tpi']    =    list_of_values_str[7]
+                par_dict['nsigma'] =    list_of_values_str[8]
+                par_dict['cur']    =    list_of_values_str[9]
+
                 return par_dict
 
-            # extract numbers from string one by one
-            string = lines[44]
-            list_of_values_str = []
-            for i in range(NUM_OF_VALUES):
-                ## it is 9 parameters to read
-                cut_end = string.find('\t')
-                str = string[ 0: cut_end ]
-                list_of_values_str.append(float(str))
-                string = string[ cut_end+1 : ]
 
-            #fulfill dictionary and return
-            par_dict['freq_read'] = list_of_values_str[0]
-            par_dict['power1'] =    list_of_values_str[1]
-            par_dict['t_read'] =    list_of_values_str[2]
-            par_dict['rudat']  =    list_of_values_str[3]
-            par_dict['freq_q'] =    list_of_values_str[4]
-            par_dict['power2'] =    list_of_values_str[5]
-            par_dict['rudat2'] =    list_of_values_str[6]
-            par_dict['tpi']    =    list_of_values_str[7]
-            par_dict['nsigma'] =    list_of_values_str[8]
-            par_dict['cur']    =    list_of_values_str[9]
+            elif ( len(lines)== 41 ):
+                print 'Caution! An old format of parameters.'
+                par_dict = {'power1':0, 'freq_read':0, 't_read':0, 'rudat':0, 'power2':0, 'freq_q':0, 'tpi':0, 'cur':0, 'nsigma':0, 'rudat2':None}
+                NUM_OF_VALUES = 9
 
-            return par_dict
+                # extract numbers from string one by one
+                string = lines[40]
+                list_of_values_str = []
+                for i in range(NUM_OF_VALUES):
+                    ## it is 9 parameters to read
+                    cut_end = string.find('\t')
+                    str = string[ 0: cut_end ]
+                    list_of_values_str.append(float(str))
+                    string = string[ cut_end+1 : ]
+
+                #fulfill dictionary and return
+                par_dict['power1'] = list_of_values_str[0]
+                par_dict['freq_read'] =    list_of_values_str[1]
+                par_dict['t_read'] =    list_of_values_str[2]
+                par_dict['rudat']  =    list_of_values_str[3]
+                par_dict['power2'] =    list_of_values_str[4]
+                par_dict['freq_q'] =    list_of_values_str[5]
+                par_dict['tpi'] =    list_of_values_str[6]
+                par_dict['cur']    =    list_of_values_str[7]
+                par_dict['nsigma'] =    list_of_values_str[8]
+
+                return par_dict
+
+
+            else:
+                print 'Error of loading. Can not recognise the format of parameter file.'
+                return None
 
         ########################################################################
-        # set up metadata
+        ###### ZERO ######
+        ### Raw Data ###
+        self.void_re_mv = 0
+        self.void_im_mv = 0
+        self.re_g     = np.array([])
+        self.im_g     = np.array([])
+        self.re_e     = np.array([])
+        self.im_e     = np.array([])
+        self.re_g_pre = np.array([])
+        self.im_g_pre = np.array([])
+        self.re_e_pre = np.array([])
+        self.im_e_pre = np.array([])
+
+        ### Normalised Data ###
+        self.x_void_mv = 0
+        self.y_void_mv = 0
+        self.x_g         = None
+        self.x_e         = None
+        self.x_g_pre     = None
+        self.x_e_pre     = None
+        self.y_g         = None
+        self.y_e         = None
+        self.y_g_p       = None
+        self.y_e_pre     = None
+
+        ### Normalised Data after Postselection ###
+        self.x_g_select  = None
+        self.x_e_select  = None
+        self.y_g_select  = None
+        self.y_e_select  = None
+
+        ## Histograms ### (it is all objects of class Histograms)
+        self.hist_x_g         = None
+        self.hist_x_e         = None
+        self.hist_x_g_pre     = None
+        self.hist_x_e_pre     = None
+        self.hist_x_g_select  = None
+        self.hist_x_e_select  = None
+
+        self.dict_fidelity = {
+        'F'         : 0,
+        'F_g'       : 0,
+        'F_e'       : 0,
+        'F_post'    : 0,
+        'F_post_g'  : 0,
+        'F_post_e'  : 0,
+        'F_gaus'    : 0,
+        'F_gaus_eg' : 0,
+        'F_gaus_ge' : 0,
+        'Err_e'     : 0,
+        'Err_g'     : 0
+        }
+
+        self.dict_count_select = {
+        'n_left_g'  : 0,    'n_left_e'  : 0,
+        'n_right_g' : 0,    'n_right_e' : 0,
+        'p_left_g'  : 0,    'p_left_e'  : 0,
+        'p_right_g' : 0,    'p_right_e' : 0,
+        'sign_ge'   : 0,
+        'p_gg'      : 0,    'p_ee'      : 0,
+        'p_ge'      : 0,    'p_eg'      : 0,
+        }
+
+        self.dict_count_select = {
+        'n_left_g'  : 0,    'n_left_e'  : 0,
+        'n_right_g' : 0,    'n_right_e' : 0,
+        'p_left_g'  : 0,    'p_left_e'  : 0,
+        'p_right_g' : 0,    'p_right_e' : 0,
+        'sign_ge'   : 0,
+        'p_gg'      : 0,    'p_ee'      : 0,
+        'p_ge'      : 0,    'p_eg'      : 0,
+        }
+
+        ##############################################
+
+        ### set up metadata
         self.datafile = datafile
         self.paramfile = paramfile
         self.timestamp = get_timestamp(datafile)
         self.dict_param = get_parameters(paramfile)
 
-        # set up data measurement
+        ### set up data measurement
         self.load_data(datafile)
 
-        # normalize it
+        ### normalize it
         self.make_norm_data_from_raw()
 
-        # find the best threshold and shift the data
+        ### find the best threshold and shift the data
         self.set_best_threshold()
         self.shift_x_to_threshold_be_zero()
 
-        # do postselection
-        self.make_postselected_data_from_norm()
 
-        # make histograms
-        self.make_histograms(nbins = nbins)
+        ### do postselection
+        if self.make_postselected_data_from_norm() != False:
 
-        self.calculate_fidelity_post()
+            ### make histograms
+            self.make_histograms(nbins = nbins)
+
+            self.calculate_fidelity_post()
+        else:
+            print 'smth went wrong'
 
 
         print 'Object is created'
@@ -866,10 +997,13 @@ class SSResult:
                 return only value of f_ro = 1. - 0.5*(p_ge + p_eg)
                 '''
                 dict_count = get_count_states(x_g,x_e,threshold)
-                p_ge = dict_count['p_ge']
-                p_eg = dict_count['p_eg']
-                f_ro = 1. - 0.5*(p_ge + p_eg)
-                return f_ro
+                if dict_count is not None:
+                    p_ge = dict_count['p_ge']
+                    p_eg = dict_count['p_eg']
+                    f_ro = 1. - 0.5*(p_ge + p_eg)
+                    return f_ro
+                else:
+                    return 0
 
             # th_min = th0-delta0
             # th_max = th0+delta0
@@ -1066,6 +1200,8 @@ class SSResult:
         self.x_g_select = x_g_selected
         self.x_e_select = x_e_selected
         self.dict_count_select = get_count_states(self.x_g_select, self.x_e_select, self.threshold)
+        if self.dict_count_select is None:
+            return False
 
         # return [index_g_wrong, index_e_wrong]  ### could be usefull for delete exact points from raw data also
         ### if you wanna do it -- do it right here, in this function
@@ -1350,13 +1486,13 @@ class SSResult:
             color_zero_vector = my_colors_dict['meduza_gold']
             vector_zero_lw = 0.5
                 ### background of image
-            fig_face_color = '#262626' #this does not work
+            fig_face_color = my_colors_dict['meduza_dark'] #this does not work
             fig_border_color = 'r'
             bg_color = 'k'
             grid_color =  my_colors_dict['meduza_gold']
             grid_transp = 0.5
             title_color = my_colors_dict['meduza_gold']
-            legend_color = '#262626'
+            legend_color = my_colors_dict['meduza_dark']
             legend_text_color = my_colors_dict['meduza_gold']
             legend_alpha = 0.7
             legend_frame_color = my_colors_dict['meduza_gold']
@@ -1403,7 +1539,7 @@ class SSResult:
             fig_face_color = 'white' #this does not work
             fig_border_color = 'r'
             bg_color = 'white'
-            grid_color =  '#262626'
+            grid_color =  my_colors_dict['meduza_dark']
             grid_transp = 0.5
             title_color = 'k'
             legend_color = 'white'
@@ -1413,7 +1549,7 @@ class SSResult:
 
 
             import matplotlib as mpl
-            AXES_COLOR = '#262626'
+            AXES_COLOR = my_colors_dict['meduza_dark']
             mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
             mpl.rc('xtick', color=AXES_COLOR)
             mpl.rc('ytick', color=AXES_COLOR)
@@ -1584,14 +1720,14 @@ class SSResult:
             # color_dist =    my_colors_dict['deus_ex_gold']
             # color_zero = my_colors_dict['meduza_gold']
                     ### background of image
-            fig_face_color = '#262626' #this does not work
+            fig_face_color = my_colors_dict['meduza_dark'] #this does not work
             fig_border_color = 'r'
             # bg_color = 'k'
-            bg_color = '#262626'
+            bg_color = my_colors_dict['meduza_dark']
             grid_color =  my_colors_dict['meduza_gold']
             grid_transp = 0.5
             title_color = my_colors_dict['meduza_gold']
-            legend_color = '#262626'
+            legend_color = my_colors_dict['meduza_dark']
             legend_text_color = my_colors_dict['meduza_gold']
             legend_alpha = 0.7
             legend_frame_color = my_colors_dict['meduza_gold']
@@ -1646,7 +1782,7 @@ class SSResult:
             fig_face_color = 'white' #this does not work
             fig_border_color = 'r'
             bg_color = 'white'
-            grid_color =  '#262626'
+            grid_color =  my_colors_dict['meduza_dark']
             grid_transp = 0.5
             title_color = 'k'
             legend_color = 'white'
@@ -1661,7 +1797,7 @@ class SSResult:
 
 
             import matplotlib as mpl
-            AXES_COLOR = '#262626'
+            AXES_COLOR = my_colors_dict['meduza_dark']
             mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
             mpl.rc('xtick', color=AXES_COLOR)
             mpl.rc('ytick', color=AXES_COLOR)
