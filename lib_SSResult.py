@@ -631,10 +631,10 @@ class SSResult:
     center_x_e_select = None
 
     # ### for future - need a back rotation #(normalisation)^-1
-    # center_re_g = None
-    # center_re_e = None
-    # center_im_g = None
-    # center_re_e = None
+    center_re_g = None
+    center_re_e = None
+    center_im_g = None
+    center_re_e = None
 
     ### Results ##########
     ### Count states ###
@@ -1407,7 +1407,7 @@ class SSResult:
         return True
 
     ### Drawing methods ###
-    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=None, fname='Two_blob', savepath='', show=False, limits=[None,None,None,None], crop=True, fig_transp = False, dark=False, title_str=None, font=None, zero_on_plot=False):
+    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=None, fname='Two_blob', savepath='', show=False, limits=[None,None,None,None], crop=True, fig_transp = False, dark=False, title_str=None, font=None, zero_on_plot=False, figax_return=False):
         '''
         Plots diagramm of scattering for two blobs on the i-q plane
         returns limits of axis (it is used for histograms)
@@ -1449,8 +1449,11 @@ class SSResult:
             re_e_p = self.re_e_pre
             im_e_p = self.im_e_pre
 
-            if centers is None:
-                [c_re_g, c_im_g, c_re_e, c_im_e ] = centers_two_blobs(re_g, im_g, re_e, im_e)
+            if centers is None: ## if we didnt give coordinats to function
+                if (self.center_re_g is None) or (self.center_re_e is None) or (self.center_im_g is None) or (self.center_re_e is None):       ## and if there are no saved coodinats
+                    [c_re_g, c_im_g, c_re_e, c_im_e ] = centers_two_blobs(re_g, im_g, re_e, im_e)
+                else:
+                    [c_re_g, c_im_g, c_re_e, c_im_e ] = [ self.center_re_g, self.center_re_e, self.center_im_g, self.center_re_e ]
             else:
                 [c_re_g, c_im_g, c_re_e, c_im_e ] = centers
 
@@ -1618,6 +1621,7 @@ class SSResult:
 
 
         # fig = plt.figure(fname, facecolor=fig_face_color, edgecolor = fig_border_color)
+
         ax = fig.add_subplot(1, 1, 1) # nrows, ncols, index
         ax.set_facecolor(bg_color)
 
@@ -1688,10 +1692,14 @@ class SSResult:
 
         if show:
             plt.show()
-        # else:
-        #     plt.close()
+        else:
+            if figax_return:
+                plt.close()
 
-        return fig
+        if figax_return: ## it uses for animations
+            return [fig, ax]
+        else:
+            return plt
 
     def plot_hists(self, regime='raw_data', dark=True, log=True, save=False, savepath='', fname='Hists', fig_transp=False, title_str='', font=None, figsize=None):
         '''
