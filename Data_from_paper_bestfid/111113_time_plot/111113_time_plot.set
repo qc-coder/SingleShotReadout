@@ -1,0 +1,177 @@
+Filename: 111113_time_plot.dat
+Timestamp: Fri Aug 10 11:11:13 2018
+
+Instrument: Pulsing_instrument
+	SSB_conversion_loss: None
+	acquisition_completed: 100.0
+	awg_segmentation: {'IQ': array([4, 5, 6])}
+	board_averaging: None
+	board_flag: 0
+	down_converted_frequency: 0.0
+	electrical_phase_delay: -31.8
+	marker1_start: 0.0
+	marker1_width: 5e-08
+	marker2_start: None
+	marker2_width: None
+	measurement_type: HOMODYNE
+	mw_security_time: 0.005
+	number_segments_memorized: 3
+	power_first_tone: -0.0
+	power_second_tone: -2.15
+	power_third_tone: 0.0
+	pulsenumber_averaging: None
+	routing_awg: {'secondtone_channel': 4}
+	src1_cw_frequency: 7.028
+	src1_frequency_start: None
+	src1_frequency_step: None
+	src1_frequency_stop: None
+	src1_points_freq_sweep: None
+	src2_cw_frequency: 6.28736
+	src2_frequency_start: None
+	src2_frequency_step: None
+	src2_frequency_stop: None
+	src2_points_freq_sweep: None
+	src3_cw_frequency: None
+	temp_length_firsttone: 5e-08
+	temp_length_secondtone: 4e-08
+	temp_length_thirdtone: 0.0
+	temp_start_firsttone: 1e-07
+	temp_start_secondtone: 4.5e-07
+	temp_start_thirdtone: 0.0
+	total_averaging: None
+	trigger_time: 100.0
+Instrument: RUDAT_comp
+	attenuation: None
+Instrument: RUDAT_ph
+	attenuation: 17.5
+Instrument: SSB_3
+	IF_frequency: None
+	LO_power: None
+	band_type: None
+	conversion_loss: None
+	freq_start: None
+	freq_stop: None
+Instrument: SSB_atom
+	IF_frequency: 0.05
+	LO_power: 15.0
+	band_type: -1.0
+	conversion_loss: 6.0
+	freq_start: 4.0
+	freq_stop: 8.0
+Instrument: SSB_cavity
+	IF_frequency: 0.0
+	LO_power: 15.0
+	band_type: -1.0
+	conversion_loss: 6.0
+	freq_start: 4.0
+	freq_stop: 8.0
+Instrument: Tabor
+	ch1_amplitude: 2.0
+	ch1_coupling: DC
+	ch1_offset: 0.0
+	ch1_output: ON
+	ch1_type_waveform: None
+	ch2_amplitude: 2.0
+	ch2_coupling: DC
+	ch2_offset: 0.0
+	ch2_output: OFF
+	ch2_type_waveform: None
+	ch3_amplitude: 2.0
+	ch3_coupling: DC
+	ch3_offset: 0.0
+	ch3_output: OFF
+	ch3_type_waveform: None
+	ch4_amplitude: 2.0
+	ch4_coupling: DC
+	ch4_offset: 0.0
+	ch4_output: ON
+	ch4_type_waveform: None
+	channels_synchronised: ON
+	clock_freq: 1000.0
+	clock_source: INT
+	func_mode: SEQ
+	m1_marker_delay_1_2: None
+	m1_marker_delay_3_4: None
+	m1_marker_high_1_2: 1.0
+	m1_marker_high_3_4: None
+	m1_marker_position_1_2: None
+	m1_marker_position_3_4: None
+	m1_marker_status_1_2: ON
+	m1_marker_status_3_4: ON
+	m1_marker_width_1_2: None
+	m1_marker_width_3_4: None
+	m2_marker_delay_1_2: None
+	m2_marker_delay_3_4: None
+	m2_marker_high_1_2: 1.0
+	m2_marker_high_3_4: None
+	m2_marker_position_1_2: None
+	m2_marker_position_3_4: None
+	m2_marker_status_1_2: OFF
+	m2_marker_status_3_4: OFF
+	m2_marker_width_1_2: None
+	m2_marker_width_3_4: None
+	marker_source: USER
+	ref_freq: 10
+	ref_source: EXT
+	run_mode: TRIG
+	trace_mode: SING
+	trigger_level: 1.6
+	trigger_mode: NORM
+	trigger_source: EVEN
+	trigger_timer_mode: TIME
+	trigger_timer_time: 100.0
+Instrument: ats9360
+	acquisition_time: 384.0
+	averaging: 4
+	clock_edge: rising
+	clock_source: INTERNAL
+	completed_acquisition: 0.0
+	mode: CHANNEL_AB
+	nb_sequence: 12000
+	samplerate: 1000.0
+	trigger_delay: 180.0
+	trigger_level: 0.2
+	trigger_range: 1.0
+	trigger_slope: positive
+Instrument: hp3245
+	autorange:  ON
+	channel: A
+	current: 0.00056
+	mode: dci
+	output_terminal: None
+	range: 0.001
+	resolution: HIGH
+	voltage: None
+Instrument: hp3245jpa
+	autorange:  ON
+	channel: B
+	current: 0.0006
+	mode: dci
+	output_terminal: None
+	range: 0.001
+	resolution: HIGH
+	voltage: None
+Instrument: smb_1
+	freqsweep: OFF
+	frequency: 7028000000.0
+	phase: None
+	power: None
+	pulse_period: None
+	pulse_status: None
+	pulse_type: None
+	pulse_width: None
+	status: ON
+Instrument: smb_2
+	freqsweep: OFF
+	frequency: 6337360000.0
+	phase: 0.0
+	power: 15.0
+	powsweep: off
+	status: ON
+Instrument: smb_3
+	freqsweep: off
+	frequency: 7034000000.0
+	phase: 0.0
+	power: 18.0
+	powsweep: off
+	status: ON

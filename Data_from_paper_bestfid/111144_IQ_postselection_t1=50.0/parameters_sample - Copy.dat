@@ -1,0 +1,45 @@
+# Filename: 192644_parameters_Fidelity190722_192644.dat
+# Timestamp: Mon Jul 22 19:26:44 2019  !!!carefull!!! This parameters taken just from .set file. Frequences could be shifted by ssb
+
+# Column 1:
+#	name: freq_read
+#	type: value
+#	units: us
+# Column 2:
+#	name: power1
+#	type: value
+#	units: us
+# Column 3:
+#	name: t_read
+#	type: value
+#	units: us
+# Column 4:
+#	name: rudat
+#	type: value
+#	units: us
+# Column 5:
+#	name: freq_q
+#	type: value
+#	units: us
+# Column 6:
+#	name: power2
+#	type: value
+#	units: us
+# Column 7:
+#	name: rudat2
+#	type: value
+#	units: us
+# Column 8:
+#	name: tpi
+#	type: value
+#	units: us
+# Column 9:
+#	name: nsigma
+#	type: value
+#	units: us
+# Column 10:
+#	name: cur
+#	type: value
+#	units: us
+
+7.028000000	None	50e-09	17.5	6.337360000	None	None	3.000000000000e-08	0	0.00056
