@@ -86,6 +86,49 @@ def where_sameside(a_arr, b, ref=0):
 
 ################################################################################
 ### math functions ###
+def my_stround(num, digits=3, withminus=False,toright=False):
+    '''
+    Takes float. Return string. With given number of digits.
+    '''
+    digits = abs(int(digits))
+    dig_remain = digits
+
+    ### work with first char
+    if num >= 0:
+        if withminus:
+            minus = ' '
+            dig_remain = dig_remain -1
+        else:
+            minus = ''
+    else:
+        minus = '-'
+        dig_remain = dig_remain -1
+
+    num = abs(num)
+
+    ### separate two parts
+    left_part = int(num)
+    right_part = num - left_part
+
+    dig_remain = dig_remain - len(str(left_part))
+
+    if dig_remain < 1:
+        string = minus + str(left_part)
+    elif dig_remain ==1:
+        if toright:
+            string = ' ' + minus + str(left_part)
+        else:
+             string = minus + str(left_part) + ' '
+    else:
+        right_part = round(right_part, dig_remain-1)
+        string = minus + str( left_part + right_part  )
+
+    if len(string) < digits:
+        for i in range(  digits-len(string)  ):
+            string = string + '0'
+
+    return string
+
 def complex_num_relationships(re1,im1,re2,im2):
     '''
     return distance and angle between two complex numbers
@@ -615,10 +658,11 @@ class SSResult:
 
     ### Parameters ###
     paramfile = ''
-    dict_param = {
-    'freq_read':0, 'power1':0, 't_read':0, 'rudat':0, 'freq_q':0,
-     'power2':0, 'rudat2':0, 'tpi':0, 'nsigma':0, 'cur':0
-     }
+    # dict_param = {
+    # 'freq_read':0, 'power1':0, 't_read':0, 'rudat':0, 'freq_q':0,
+    #  'power2':0, 'rudat2':0, 'tpi':0, 'nsigma':0, 'cur':0
+    #  }
+    dict_param = None
 
     ### e-g-State definition ###
     threshold = None
@@ -658,25 +702,26 @@ class SSResult:
     'p_ge'      : 0,    'p_eg'      : 0,
     }
     ### Fidelity dictionary ###
-    dict_fidelity = {
-    'F'         : 0,
-    'F_g'       : 0,
-    'F_e'       : 0,
-    'F_post'    : 0,
-    'F_post_g'  : 0,
-    'F_post_e'  : 0,
-    'F_gaus'    : 0,
-    'F_gaus_eg' : 0,
-    'F_gaus_ge' : 0,
-    'Err_e'     : 0,
-    'Err_g'     : 0
-    }
+    # dict_fidelity = {
+    # 'F'         : 0,
+    # 'F_g'       : 0,
+    # 'F_e'       : 0,
+    # 'F_post'    : 0,
+    # 'F_post_g'  : 0,
+    # 'F_post_e'  : 0,
+    # 'F_gaus'    : 0,
+    # 'F_gaus_eg' : 0,
+    # 'F_gaus_ge' : 0,
+    # 'Err_e'     : 0,
+    # 'Err_g'     : 0
+    # }
+    dict_fidelity = None
 
     ############################################################################
     ############################################################################
     #### METHODS ###############################################################
 
-    def __init__(self, datafile, paramfile='', nbins=100):
+    def __init__(self, datafile, paramfile=None, nbins=100):
 
         def get_timestamp(filename):
             '''
@@ -852,7 +897,8 @@ class SSResult:
         self.datafile = datafile
         self.paramfile = paramfile
         self.timestamp = get_timestamp(datafile)
-        self.dict_param = get_parameters(paramfile)
+        if paramfile is not None:
+            self.dict_param = get_parameters(paramfile)
 
         ### set up data measurement
         self.load_data(datafile)
@@ -1240,40 +1286,33 @@ class SSResult:
         self.hist_x_g.fit(self.threshold, g_crop_s)
         self.hist_x_e = Histogram(self.x_e, nbins = nbins)
         self.hist_x_e.fit(self.threshold, e_crop_s)
-        print 'x_g, x_e histograms was made'
 
         ### set a new center
         self.center_x_g = self.hist_x_g.gauss_param[0]
         self.center_x_e = self.hist_x_e.gauss_param[0]
-        print 'new center setted:', self.center_x_g, ' ', self.center_x_e
 
         ### making hists and fit for x_g_pre & x_e_pre ###
         if self.x_g_pre is not None:
             self.hist_x_g_pre = Histogram(self.x_g_pre, nbins = nbins)
-            print 'x_g_pre histogram was made'
         if self.x_e_pre is not None:
             self.hist_x_e_pre = Histogram(self.x_e_pre, nbins = nbins)
-            print 'x_e_pre histogram was made'
 
         ### making hists and fit for x_g_selected & x_e_selected ###
         if self.x_g_select is not None:
             self.hist_x_g_select = Histogram(self.x_g_select, nbins = nbins)
             self.hist_x_g_select.fit(self.threshold, g_crop_s)
-            print 'x_g_sel histogram was made'
             ### reset a new center
             self.center_x_g_select = self.hist_x_g_select.gauss_param[0]
 
         if self.x_e_select is not None:
             self.hist_x_e_select = Histogram(self.x_e_select, nbins = nbins)
             self.hist_x_e_select.fit(self.threshold, e_crop_s)
-            print 'x_e_sel histogram was made'
             ### reset a new center
             self.center_x_e_select = self.hist_x_e_select.gauss_param[0]
-            print 'new center selected setted:', self.center_x_g_select, ' ', self.center_x_e_select
 
 
         ### making hists and fit for x_g_pre & x_e_pre ###
-
+        print 'histograms made'
         return True
 
     def calculate_fidelity_post(self):
@@ -1351,7 +1390,7 @@ class SSResult:
         # return self.dict_fidelity
         return True
 
-    def erase_data(self, data_to_erase):
+    def erase_data(self, data_to_erase, selfrun=False):
         '''
         Function to get free memory.
         Erase the data of object after calculations was done
@@ -1370,7 +1409,8 @@ class SSResult:
             self.re_e_pre = None
             self.im_g_pre = None
             self.im_e_pre = None
-            print '__Raw data erased!'
+            if not selfrun:
+                print '__Raw data erased!'
         elif data_to_erase == 'norm':
             self.x_g = None
             self.x_e = None
@@ -1380,7 +1420,8 @@ class SSResult:
             self.x_e_pre = None
             self.y_g_pre = None
             self.y_e_pre = None
-            print '__Normed data erased!'
+            if not selfrun:
+                print '__Normed data erased!'
         elif data_to_erase == 'pre':
             self.re_g_pre = None
             self.re_e_pre = None
@@ -1390,17 +1431,20 @@ class SSResult:
             self.x_e_pre = None
             self.y_g_pre = None
             self.y_e_pre = None
-            print '__Pre-pulse data erased!'
+            if not selfrun:
+                print '__Pre-pulse data erased!'
         elif data_to_erase == 'select':
             x_g_select  = None
             x_e_select  = None
             y_g_select  = None
             y_e_select  = None
-            print '__Selected data erased!'
+            if not selfrun:
+                print '__Selected data erased!'
         elif data_to_erase == 'all':
-            self.erase_data(data_to_erase='raw')
-            self.erase_data(data_to_erase='norm')
-            self.erase_data(data_to_erase='select')
+            self.erase_data(data_to_erase='raw',   selfrun=True)
+            self.erase_data(data_to_erase='norm',  selfrun=True)
+            self.erase_data(data_to_erase='select',selfrun=True)
+            print 'All data erased!'
         else:
             print '__Nothing erased. Check the parameter'
 
@@ -1562,6 +1606,10 @@ class SSResult:
             if savepath == '':
                 savepath='savings\\'
 
+        if self.dict_fidelity is not None:
+            str_fidelity = 'F_post:'+my_stround(  100*self.dict_fidelity['F_post'],4 )+'% F:'+my_stround(  100*self.dict_fidelity['F'],4 )+'% F_gaus:'+my_stround(  100*self.dict_fidelity['F_gaus'],4 )+'%'
+        if self.dict_param is not None:
+            str_params = 'Rdt:'+ my_stround( self.dict_param['rudat'],4 )+'dB; t_read:'+my_stround( 1e9*self.dict_param['t_read'],3 )+'ns'
 
 
         ### find angle 2*alpha (angle between two blolbs according to void-state)
@@ -1588,21 +1636,24 @@ class SSResult:
 
         ### calculation of angle and distance between blolb centers
         [dist, theta] = complex_num_relationships(c_re_g,c_im_g,c_re_e,c_im_e)
-        str_blob_place = 'Distance:'+ str(round(dist, 2)) + '; Theta:' + str( int(round(theta)) )
+        # str_blob_place = 'Distance:'+ str(round(dist, 2)) + '; Theta:' + str( int(round(theta)) )
+        str_blob_place = 'Distance:'+ my_stround(dist,4) + '; Theta:' + my_stround(theta,2,withminus=True)
         print str_blob_place
 
         ### vectors of each states from void signal
         [amp_g, ph_g] = complex_num_relationships(void_re_mv, void_im_mv, c_re_g,c_im_g)
         [amp_e, ph_e] = complex_num_relationships(void_re_mv, void_im_mv, c_re_e,c_im_e)
 
-        str_g_place = 'Amp:'+ str(round(amp_g,2)) + '; Phase:'+ str(int( round(ph_g))  )
-        str_e_place = 'Amp:'+ str(round(amp_e,2)) + '; Phase:'+ str(int( round(ph_e))  )
-        amp_relation = round(amp_e/amp_g,2)
-        str_blob_place = str_blob_place + '; Ratio amps: '+str(amp_relation)
+        # str_g_place = 'Amp:'+ str(round(amp_g,2)) + '; Phase:'+ str(int( round(ph_g))  )
+        # str_e_place = 'Amp:'+ str(round(amp_e,2)) + '; Phase:'+ str(int( round(ph_e))  )
+        str_g_place = 'Amp:'+ my_stround(amp_g,5,withminus=True) + '; Phase:'+ my_stround(ph_g,4,withminus=True)
+        str_e_place = 'Amp:'+ my_stround(amp_e,5,withminus=True) + '; Phase:'+ my_stround(ph_e,4,withminus=True)
+
+        amp_relation = my_stround(amp_e/amp_g,4,withminus=True)
+        str_blob_place = str_blob_place + '; Ratio amps: '+ amp_relation
         print str_g_place
         print str_e_place
-        print 'Ratio amps:', amp_relation
-
+        print 'Ratio amps: '+ amp_relation
 
         if dark:
             fname = fname + '_dark'
@@ -1656,6 +1707,12 @@ class SSResult:
         plt.scatter(re_e, im_e, color=color_e, alpha=transpcy, s=markersize)
         plt.scatter(re_g, im_g, color=color_g, alpha=transpcy, s=markersize)
 
+        ### fake plot just for string in legend
+        plt.plot([],[], label = str_params, visible=False)
+        plt.plot([],[], label = str_fidelity, visible=False)
+
+
+        ### real plots
         plt.plot([c_re_g, c_re_e], [c_im_g, c_im_e], label=str_blob_place, color=color_dist, linewidth = vector_bw_blobs)              #plot line between blobs centers
         plt.plot([void_re_mv,c_re_g], [void_im_mv, c_im_g], color=color_g_vector, linewidth=vector_state_lw)        #plot line from VOID to |g> blob
         plt.plot([void_re_mv,c_re_e], [void_im_mv, c_im_e], color=color_e_vector, linewidth=vector_state_lw)        #plot line from VOID to |e> blob
@@ -1664,7 +1721,7 @@ class SSResult:
 
         plt.plot([ c_re_g ],[ c_im_g ],'+', color=color_g_mean, label='g-state: '+str_g_place)  #this two needs only for legend color
         plt.plot([ c_re_e ],[ c_im_e ],'+', color=color_e_mean, label='e-state: '+str_e_place)
-        plt.plot([void_re_mv ],[void_im_mv ],'+', label='Void zero: Re:'+ str(round(void_re_mv,2))+ '; Im:'+ str(round(void_im_mv,2)) + '; 2*alpha='+ str(int(round(angle_between_blobs)) ), color=color_void )      #coordinats of no signal VOID (global)
+        plt.plot([void_re_mv ],[void_im_mv ],'+', label='Void zero: Re:'+ my_stround(void_re_mv,5,withminus=True)+ '; Im:'+ my_stround(void_im_mv,5,withminus=True) + '; 2*alpha='+ my_stround(angle_between_blobs,3,withminus=True), color=color_void )      #coordinats of no signal VOID (global)
         if zero_on_plot:
             plt.plot([0],[0],'+', color=color_zero )   #coordinats of 0 mV
 
