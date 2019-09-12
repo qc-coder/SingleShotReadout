@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 ### My Design ###
 my_colors_dict = {  'redberry'      :'#970000',
                     'tamarillo'     :'#8b1212',
-                    'venetianred'   :'#770023',
+                    'venetianred'   :'#770023', ## main
                     'monarch'       :'#850731',
                     'toledo'        :'#40001b',
                     'shipgrey'      :'#423B4B',
@@ -1451,10 +1451,11 @@ class SSResult:
         return True
 
     ### Drawing methods ###
-    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=None, fname='Two_blob', savepath='', show=False, limits=[None,None,None,None], crop=True, fig_transp = False, dark=False, title_str=None, font=None, zero_on_plot=False, figax_return=False):
+    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=None, fontsize=8, markersize=15, lw=1, transpcy=3e-2,  fname='Two_blob', savepath='', show=False, limits=[None,None,None,None], crop=True, fig_transp = False, dark=False, title_str=None, font=None, zero_on_plot=False, figax_return=False):
         '''
         Plots diagramm of scattering for two blobs on the i-q plane
         returns limits of axis (it is used for histograms)
+        figsize - in inches!
         '''
         if norm:
             if (self.x_g is None) or (self.x_e is None):
@@ -1512,26 +1513,27 @@ class SSResult:
         ### ##############T ###
 
         #### custom colors #3
+        vector_bw_blobs = 0.7*lw
+        vector_state_lw = 0.7*lw
+        vector_zero_lw = 0.5*lw
+        markersize = markersize
+
         if dark:
             color_g = my_colors_dict['blob_g']
             color_e = my_colors_dict['blob_e']
-            transpcy=3e-2
-            markersize = 15   #None - by default
+              #None - by default
                 ### centers of clouds
             # color_g_mean = '#795fd7'
             color_g_mean = my_colors_dict['g_state_mark']
             color_e_mean = my_colors_dict['e_state_mark']
             color_dist =    my_colors_dict['deus_ex_gold']
-            vector_bw_blobs = 0.7
                 ### vectors from void_point to centers
             color_g_vector = my_colors_dict['deus_ex_gold']
             color_e_vector = my_colors_dict['deus_ex_gold']
-            vector_state_lw = 0.7
                 ### zero points
             color_void = my_colors_dict['deus_ex_gold']
             color_zero = my_colors_dict['meduza_gold']
             color_zero_vector = my_colors_dict['meduza_gold']
-            vector_zero_lw = 0.5
                 ### background of image
             fig_face_color = my_colors_dict['meduza_dark'] #this does not work
             fig_border_color = 'r'
@@ -1562,26 +1564,20 @@ class SSResult:
             color_dist = 'gold'
             color_zero = 'k'
             grid_transp=None
-
             color_g = 'b'
             color_e = 'r'
-            transpcy=2.5e-2
-            markersize = None   #None - by default
                 ### centers of clouds
             # color_g_mean = '#795fd7'
             color_g_mean = 'midnightblue'
             color_e_mean = 'maroon'
             color_dist = 'gold'
-            vector_bw_blobs = 0.7
                 ### vectors from void_point to centers
             color_g_vector = 'gold'
             color_e_vector ='gold'
-            vector_state_lw = 0.7
                 ### zero points
             color_void = 'gold'
             color_zero = 'k'
             color_zero_vector = 'k'
-            vector_zero_lw = 0.5
                 ### background of image
             fig_face_color = 'white' #this does not work
             fig_border_color = 'r'
@@ -1593,7 +1589,6 @@ class SSResult:
             legend_text_color = 'k'
             legend_alpha = 0.7
             legend_frame_color = my_colors_dict['meduza_gold']
-
 
             import matplotlib as mpl
             AXES_COLOR = my_colors_dict['meduza_dark']
@@ -1714,15 +1709,17 @@ class SSResult:
 
         ### real plots
         plt.plot([c_re_g, c_re_e], [c_im_g, c_im_e], label=str_blob_place, color=color_dist, linewidth = vector_bw_blobs)              #plot line between blobs centers
-        plt.plot([void_re_mv,c_re_g], [void_im_mv, c_im_g], color=color_g_vector, linewidth=vector_state_lw)        #plot line from VOID to |g> blob
-        plt.plot([void_re_mv,c_re_e], [void_im_mv, c_im_e], color=color_e_vector, linewidth=vector_state_lw)        #plot line from VOID to |e> blob
+        if zero_on_plot:
+            plt.plot([void_re_mv,c_re_g], [void_im_mv, c_im_g], color=color_g_vector, linewidth=vector_state_lw)        #plot line from VOID to |g> blob
+            plt.plot([void_re_mv,c_re_e], [void_im_mv, c_im_e], color=color_e_vector, linewidth=vector_state_lw)        #plot line from VOID to |e> blob
         if zero_on_plot:
             plt.plot([0, void_re_mv], [0, void_im_mv], color=color_zero_vector, linewidth=vector_zero_lw)      #plot line form [0,0] to VOID
 
-        plt.plot([ c_re_g ],[ c_im_g ],'+', color=color_g_mean, label='g-state: '+str_g_place)  #this two needs only for legend color
-        plt.plot([ c_re_e ],[ c_im_e ],'+', color=color_e_mean, label='e-state: '+str_e_place)
-        plt.plot([void_re_mv ],[void_im_mv ],'+', label='Void zero: Re:'+ my_stround(void_re_mv,5,withminus=True)+ '; Im:'+ my_stround(void_im_mv,5,withminus=True) + '; 2*alpha='+ my_stround(angle_between_blobs,3,withminus=True), color=color_void )      #coordinats of no signal VOID (global)
+        plt.plot([ c_re_g ],[ c_im_g ],'+', markersize=markersize*1.2, color=color_g_mean, label='g-state: '+str_g_place)  #this two needs only for legend color
+        plt.plot([ c_re_e ],[ c_im_e ],'+', markersize=markersize*1.2, color=color_e_mean, label='e-state: '+str_e_place)
+
         if zero_on_plot:
+            plt.plot([void_re_mv ],[void_im_mv ],'+', label='Void zero: Re:'+ my_stround(void_re_mv,5,withminus=True)+ '; Im:'+ my_stround(void_im_mv,5,withminus=True) + '; 2*alpha='+ my_stround(angle_between_blobs,3,withminus=True), color=color_void )      #coordinats of no signal VOID (global)
             plt.plot([0],[0],'+', color=color_zero )   #coordinats of 0 mV
 
         if font is not None:
@@ -1731,7 +1728,9 @@ class SSResult:
             leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='lower left', facecolor=legend_color,edgecolor=legend_frame_color)
 
         for text in leg.get_texts():        #set color to legend text
+            plt.setp(text, size = fontsize)
             plt.setp(text, color = legend_text_color)
+
 
         if font is not None:
             for label in ax.get_xticklabels():  #set font to each xtick
@@ -1758,7 +1757,7 @@ class SSResult:
         else:
             return plt
 
-    def plot_hists(self, regime='raw_data', dark=True, log=True, save=False, savepath='', fname='Hists', fig_transp=False, title_str='', font=None, figsize=None):
+    def plot_hists(self, regime='raw_data', dark=True, log=True, save=False, savepath='', fname='Hists', lw=1, fig_transp=False, title_str='', font=None, figsize=None):
         '''
         function of plot histograms of object is it exists
         have different regimes:
@@ -1799,7 +1798,7 @@ class SSResult:
 
             th_alpha = 0.7
             th_color = my_colors_dict['deus_ex_gold']
-            th_width = 2.0
+            th_width = 2.0*lw
             th_linestyle = '--'
 
             AXES_COLOR = my_colors_dict['meduza_gold']
@@ -1903,16 +1902,16 @@ class SSResult:
                 hist_g   = self.hist_x_g.hist_xy
                 hist_e   = self.hist_x_e.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
-                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_g, label='Read g-state')
-                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_e, label='Read e-state')
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_g, label='Read g-state')
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_e, label='Read e-state')
 
             #### plot fit hists ####
             if (self.hist_x_g.gauss_fit is not None) and (self.hist_x_e.gauss_fit is not None):
                 hist_g  = self.hist_x_g.gauss_fit
                 hist_e  = self.hist_x_e.gauss_fit
                 # maxval = np.max([ maxval, np.max(hist_g_fit[0]), np.max(hist_e_fit[0]) ])
-                plt.plot(hist_g[1], hist_g[0], lw=1, color=color_fit_g, label='fit g-state')
-                plt.plot(hist_e[1], hist_e[0], lw=1, color=color_fit_e, label='fit e-state')
+                plt.plot(hist_g[1], hist_g[0], lw=1*lw, color=color_fit_g, label='fit g-state')
+                plt.plot(hist_e[1], hist_e[0], lw=1*lw, color=color_fit_e, label='fit e-state')
 
         elif regime == 'raw_data_and_pre':
             print 'regime: raw_data_and_pre'
@@ -1924,24 +1923,24 @@ class SSResult:
                 hist_g  = self.hist_x_g_pre.hist_xy
                 hist_e  = self.hist_x_e_pre.hist_xy
                 # maxval = np.max([ maxval, np.max(hist_g_fit[0]), np.max(hist_e_fit[0]) ])
-                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_post, label='Prepulse g-state')
-                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_post, label='Prepulse e-state')
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_post, label='Prepulse g-state')
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_post, label='Prepulse e-state')
 
             #### plot x_g, x_e hists ####
             if (self.hist_x_g.hist_xy is not None) and (self.hist_x_e.hist_xy is not None):
                 hist_g   = self.hist_x_g.hist_xy
                 hist_e   = self.hist_x_e.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
-                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_g, label='Read g-state')
-                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_e, label='Read e-state')
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_g, label='Read g-state')
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_e, label='Read e-state')
 
             #### plot fit hists ####
             if (self.hist_x_g.gauss_fit is not None) and (self.hist_x_e.gauss_fit is not None):
                 hist_g  = self.hist_x_g.gauss_fit
                 hist_e  = self.hist_x_e.gauss_fit
                 # maxval = np.max([ maxval, np.max(hist_g_fit[0]), np.max(hist_e_fit[0]) ])
-                plt.plot(hist_g[1], hist_g[0], lw=1, color=color_fit_g, label='Fit g-state')
-                plt.plot(hist_e[1], hist_e[0], lw=1, color=color_fit_e, label='Fit e-state')
+                plt.plot(hist_g[1], hist_g[0], lw=1*lw, color=color_fit_g, label='Fit g-state')
+                plt.plot(hist_e[1], hist_e[0], lw=1*lw, color=color_fit_e, label='Fit e-state')
 
 
         elif regime=='selected':
@@ -1955,16 +1954,16 @@ class SSResult:
                 hist_g   = self.hist_x_g_select.hist_xy
                 hist_e   = self.hist_x_e_select.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
-                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_g, label='Selected g-state')
-                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_e, label='Selected e-state')
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_g, label='Selected g-state')
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_e, label='Selected e-state')
 
             #### plot fit hists ####
             if (self.hist_x_g_select.gauss_fit is not None) and (self.hist_x_e_select.gauss_fit is not None):
                 hist_g  = self.hist_x_g_select.gauss_fit
                 hist_e  = self.hist_x_e_select.gauss_fit
                 # maxval = np.max([ maxval, np.max(hist_g_fit[0]), np.max(hist_e_fit[0]) ])
-                plt.plot(hist_g[1], hist_g[0], lw=1, color=color_fit_g, label='Fit g-state selected')
-                plt.plot(hist_e[1], hist_e[0], lw=1, color=color_fit_e, label='Fit e-state selected')
+                plt.plot(hist_g[1], hist_g[0], lw=1*lw, color=color_fit_g, label='Fit g-state selected')
+                plt.plot(hist_e[1], hist_e[0], lw=1*lw, color=color_fit_e, label='Fit e-state selected')
 
 
         elif regime=='raw_and_selected':
@@ -1977,16 +1976,16 @@ class SSResult:
                 hist_g   = self.hist_x_g_select.hist_xy
                 hist_e   = self.hist_x_e_select.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
-                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_post, label='Selected g-state')
-                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_post, label='Selected e-state')
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_post, label='Selected g-state')
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_post, label='Selected e-state')
 
             #### plot x_g, x_e hists ####
             if (self.hist_x_g.hist_xy is not None) and (self.hist_x_e.hist_xy is not None):
                 hist_g   = self.hist_x_g.hist_xy
                 hist_e   = self.hist_x_e.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
-                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1, color=color_g, label='Read g-state')
-                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1, color=color_e, label='Read e-state')
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_g, label='Read g-state')
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_e, label='Read e-state')
 
 
         else:
@@ -2036,7 +2035,10 @@ class SSResult:
             if not os.path.exists(savepath):
                 os.makedirs(savepath)
             full_fname = savepath +'\\'+ fname + '.png'
-            plt.savefig(full_fname, transparent = fig_transp, facecolor=fig_face_color, edgecolor=fig_border_color)
+            if fig_transp:
+                plt.savefig(full_fname, transparent = True)
+            else:
+                plt.savefig(full_fname,facecolor=fig_face_color, edgecolor=fig_border_color)
 
         return fig
 
