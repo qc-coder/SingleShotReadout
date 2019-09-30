@@ -929,18 +929,55 @@ class SSResult:
         '''
         function open file and create data sequences
         '''
+        def datatype(file):
+            '''
+            recognize type of datafile. Work for SingleShot files only
+            '''
+            try:
+                f = open(file, "r")
+                lines = f.readlines()
+                f.close()
+            except:
+                print 'Error datatype() - can not open file'
+                return 'error'
+
+            if (lines[4]  == '#\tname: Real \n') and (lines[9] == '#\tname: Real-pi\n') and (lines[14] == '#\tname: Imag \n') and (lines[18] == '#\tname: Imag-pi \n'):
+                return 'type1' ### old type
+            elif (lines[4] == '#\tname: re_g\n') and (lines[7] == '#\tname: im_g\n') and (lines[10] == '#\tname: re_e\n') and (lines[13] == '#\tname: im_e\n'):
+                return 'type2' ### new type
+            else:
+                return 'error'
+
         try:
-            raw_data_ss = np.loadtxt(datafile)
-            self.re_g     = raw_data_ss[:,0]
-            self.im_g     = raw_data_ss[:,1]
-            self.re_e     = raw_data_ss[:,2]
-            self.im_e     = raw_data_ss[:,3]
-            self.re_g_pre = raw_data_ss[:,4]
-            self.im_g_pre = raw_data_ss[:,5]
-            self.re_e_pre = raw_data_ss[:,6]
-            self.im_e_pre = raw_data_ss[:,7]
-            print 'data loaded'
-            return True
+            datatype = datatype(datafile)
+
+            if datatype == 'type2': ##new data
+                raw_data_ss = np.loadtxt(datafile)
+                self.re_g     = raw_data_ss[:,0]
+                self.im_g     = raw_data_ss[:,1]
+                self.re_e     = raw_data_ss[:,2]
+                self.im_e     = raw_data_ss[:,3]
+                self.re_g_pre = raw_data_ss[:,4]
+                self.im_g_pre = raw_data_ss[:,5]
+                self.re_e_pre = raw_data_ss[:,6]
+                self.im_e_pre = raw_data_ss[:,7]
+                print 'data loaded'
+                return True
+            elif  datatype == 'type1':   ##old data
+                raw_data_ss = np.loadtxt(datafile)
+                self.re_g     = raw_data_ss[:,0]
+                self.re_e     = raw_data_ss[:,1]
+                self.im_g    = raw_data_ss[:,2]
+                self.im_e     = raw_data_ss[:,3]
+                self.re_g_pre = raw_data_ss[:,4]
+                self.re_e_pre = raw_data_ss[:,5]
+                self.im_g_pre = raw_data_ss[:,6]
+                self.im_e_pre = raw_data_ss[:,7]
+                print 'data loaded'
+                return True
+            else:
+                print 'ERROR! Can not recognize data type'
+
         except:
             print 'Warning load_data() error!'
             print 'can not load file: ', datafile
