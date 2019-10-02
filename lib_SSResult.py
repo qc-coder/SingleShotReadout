@@ -965,14 +965,26 @@ class SSResult:
                 return True
             elif  datatype == 'type1':   ##old data
                 raw_data_ss = np.loadtxt(datafile)
-                self.re_g     = raw_data_ss[:,0]
-                self.re_e     = raw_data_ss[:,1]
-                self.im_g    = raw_data_ss[:,2]
-                self.im_e     = raw_data_ss[:,3]
-                self.re_g_pre = raw_data_ss[:,4]
-                self.re_e_pre = raw_data_ss[:,5]
-                self.im_g_pre = raw_data_ss[:,6]
-                self.im_e_pre = raw_data_ss[:,7]
+
+                ### this is logical according to labels, but g and e are inverted than (problem of data saving)
+                # self.re_g     = raw_data_ss[:,0]
+                # self.re_e     = raw_data_ss[:,1]
+                # self.im_g     = raw_data_ss[:,2]
+                # self.im_e     = raw_data_ss[:,3]
+                # self.re_g_pre = raw_data_ss[:,4]
+                # self.re_e_pre = raw_data_ss[:,5]
+                # self.im_g_pre = raw_data_ss[:,6]
+                # self.im_e_pre = raw_data_ss[:,7]
+
+                self.re_e     = raw_data_ss[:,0]
+                self.re_g     = raw_data_ss[:,1]
+                self.im_e     = raw_data_ss[:,2]
+                self.im_g     = raw_data_ss[:,3]
+                self.re_e_pre = raw_data_ss[:,4]
+                self.re_g_pre = raw_data_ss[:,5]
+                self.im_e_pre = raw_data_ss[:,6]
+                self.im_g_pre = raw_data_ss[:,7]
+
                 print 'data loaded'
                 return True
             else:
@@ -1488,7 +1500,7 @@ class SSResult:
         return True
 
     ### Drawing methods ###
-    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=None, fontsize=8, markersize=15, lw=1, transpcy=3e-2,  fname='Two_blob', savepath='', show=False, limits=[None,None,None,None], crop=True, fig_transp = False, dark=False, title_str=None, font=None, zero_on_plot=False, figax_return=False):
+    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=None, fontsize=8, markersize=15, lw=1, transpcy=3e-2,  fname='Two_blob', savepath='', show=False, limits=[None,None,None,None], crop=True, fig_transp = False, dark=False, title_str=None, font=None, zero_on_plot=False, figax_return=False, pre_read=False):
         '''
         Plots diagramm of scattering for two blobs on the i-q plane
         returns limits of axis (it is used for histograms)
@@ -1530,6 +1542,11 @@ class SSResult:
             im_g_p = self.im_g_pre
             re_e_p = self.re_e_pre
             im_e_p = self.im_e_pre
+            if pre_read:
+                re_g_pre = self.re_g_pre
+                im_g_pre = self.im_g_pre
+                re_e_pre = self.re_e_pre
+                im_e_pre = self.im_e_pre
 
             if centers is None: ## if we didnt give coordinats to function
                 if (self.center_re_g is None) or (self.center_re_e is None) or (self.center_im_g is None) or (self.center_re_e is None):       ## and if there are no saved coodinats
@@ -1738,6 +1755,10 @@ class SSResult:
 
         plt.scatter(re_e, im_e, color=color_e, alpha=transpcy, s=markersize)
         plt.scatter(re_g, im_g, color=color_g, alpha=transpcy, s=markersize)
+
+        if pre_read:
+            if not norm:
+                plt.scatter(re_g_pre, im_g_pre, color='g', alpha=transpcy, s=markersize)
 
         ### fake plot just for string in legend
         plt.plot([],[], label = str_params, visible=False)
