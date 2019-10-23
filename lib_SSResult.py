@@ -451,7 +451,7 @@ class Histogram:
     hist        = None
     hist_xy     = None
     gauss_fit   = None
-    gauss_param = None  #[ center_mv, sigma_mv, std_mv, max_y, min_y ]
+    gauss_param = None  #[ center_v, sigma_v, std_v, max_y, min_y ]
 
     #########################################
 
@@ -587,13 +587,13 @@ class Histogram:
             ### here we already know exact centers!
             min_y       = gauss_p[0]
             max_y       = gauss_p[1]
-            center_mv   = gauss_p[2]
-            std_mv      = gauss_p[3]
+            center_v   = gauss_p[2]
+            std_v      = gauss_p[3]
 
-            sigma_mv  = std_mv/2
+            sigma_v  = std_v/2
 
             h_x_fit     = [ y_gausfit, x_axis ]
-            p_list      = [ center_mv, sigma_mv, std_mv, max_y, min_y ]
+            p_list      = [ center_v, sigma_v, std_v, max_y, min_y ]
             return [h_x_fit, p_list]
 
         [ hist_x_fit, gaus_par_x ]  = fit_gauss( self.hist_xy, crop_thr=threshold, crop_sign=crop_sign )
@@ -612,8 +612,8 @@ class SSResult:
     ###---------------------------###
     ###### DATA ######
     ### Raw Data ###
-    void_re_mv = 0
-    void_im_mv = 0
+    void_re = 0
+    void_im = 0
     re_g     = np.array([])
     im_g     = np.array([])
     re_e     = np.array([])
@@ -624,8 +624,8 @@ class SSResult:
     im_e_pre = np.array([])
 
     ### Normalised Data ###
-    x_void_mv = 0
-    y_void_mv = 0
+    void_x = 0
+    void_y = 0
     x_g         = None
     x_e         = None
     x_g_pre     = None
@@ -820,8 +820,8 @@ class SSResult:
         ########################################################################
         ###### ZERO ######
         ### Raw Data ###
-        self.void_re_mv = 0
-        self.void_im_mv = 0
+        self.void_re = 0
+        self.void_im = 0
         self.re_g     = np.array([])
         self.im_g     = np.array([])
         self.re_e     = np.array([])
@@ -832,8 +832,8 @@ class SSResult:
         self.im_e_pre = np.array([])
 
         ### Normalised Data ###
-        self.x_void_mv = 0
-        self.y_void_mv = 0
+        self.void_x = 0
+        self.void_y = 0
         self.x_g         = None
         self.x_e         = None
         self.x_g_pre     = None
@@ -1034,7 +1034,7 @@ class SSResult:
         [c_re_g, c_im_g, c_re_e, c_im_e ] = centers_two_blobs(re_g, im_g, re_e, im_e)
 
         ### find angle 2*alpha (angle between two blolbs according to void-state)
-        angle_between_blobs = angle_three_points(c_re_g,c_im_g, self.void_re_mv,self.void_im_mv, c_re_e,c_im_e)
+        angle_between_blobs = angle_three_points(c_re_g,c_im_g, self.void_re,self.void_im, c_re_e,c_im_e)
 
         ### find distance and theta between this centers
         [dist, theta] = complex_num_relationships(c_re_g,c_im_g,c_re_e,c_im_e)      #extract theta
@@ -1046,11 +1046,11 @@ class SSResult:
         [ [re_g_pre, im_g_pre],  [re_e_pre, im_e_pre] ]     = change_basis_blobs_inf(threshold_re, threshold_im, theta, [re_g_pre, im_g_pre] , [re_e_pre, im_e_pre] )
 
         # normalize VOID state
-        [void_re_mv,void_im_mv]                             = change_basis_point(self.void_re_mv, self.void_im_mv, threshold_re, threshold_im, theta)
+        [void_re,void_im]                             = change_basis_point(self.void_re, self.void_im, threshold_re, threshold_im, theta)
 
         ########_____SAVING____________#########################################
-        self.x_void_mv      = void_re_mv
-        self.y_void_mv      = void_im_mv
+        self.void_x      = void_re
+        self.void_y      = void_im
         self.x_g            = re_g
         self.x_e            = re_e
         self.x_g_pre        = re_g_pre
@@ -1214,7 +1214,7 @@ class SSResult:
         if self.x_e_select is not None:
             self.x_e_select = shifter(self.x_e_select, threshold)
 
-        [self.x_void_mv] = shifter([self.x_void_mv], threshold)
+        [self.void_x] = shifter([self.void_x], threshold)
 
         # ### shift the center of blobs also
         # if self.center_x_g is not None:
@@ -1500,7 +1500,7 @@ class SSResult:
         return True
 
     ### Drawing methods ###
-    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=None, fontsize=8, markersize=15, lw=1, transpcy=3e-2,  fname='Two_blob', savepath='', show=False, limits=[None,None,None,None], crop=True, fig_transp = False, dark=False, title_str=None, font=None, zero_on_plot=False, figax_return=False, pre_read=False):
+    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=[15,10], markersize=15, lw=1, transpcy=3e-2,  fname='Two_blob', savepath='', show=False, limits=[None,None,None,None], crop=True, fig_transp = False, dark=False, title_str=None, font=None, zero_on_plot=False, figax_return=False, pre_read=False):
         '''
         Plots diagramm of scattering for two blobs on the i-q plane
         returns limits of axis (it is used for histograms)
@@ -1509,8 +1509,8 @@ class SSResult:
         if norm:
             if (self.x_g is None) or (self.x_e is None):
                 self.make_norm_data_from_raw()    ### do renormalization
-            void_re_mv = self.x_void_mv
-            void_im_mv = self.y_void_mv
+            void_re = self.void_x
+            void_im = self.void_y
             re_g     = self.x_g
             im_g     = self.y_g
             re_e     = self.x_e
@@ -1532,8 +1532,8 @@ class SSResult:
                 if not success_load:
                     print 'load was not successful'
                     return None
-            void_re_mv = self.void_re_mv
-            void_im_mv = self.void_im_mv
+            void_re = self.void_re
+            void_im = self.void_im
             re_g     = self.re_g
             im_g     = self.im_g
             re_e     = self.re_e
@@ -1549,8 +1549,13 @@ class SSResult:
                 im_e_pre = self.im_e_pre
 
             if centers is None: ## if we didnt give coordinats to function
-                if (self.center_re_g is None) or (self.center_re_e is None) or (self.center_im_g is None) or (self.center_re_e is None):       ## and if there are no saved coodinats
+                if (self.center_re_g is None) or (self.center_re_e is None) or (self.center_im_g is None) or (self.center_im_e is None):       ## and if there are no saved coodinats
                     [c_re_g, c_im_g, c_re_e, c_im_e ] = centers_two_blobs(re_g, im_g, re_e, im_e)
+                    self.center_re_g = c_re_g
+                    self.center_im_g = c_im_g
+                    self.center_re_e = c_re_e
+                    self.center_im_e = c_im_e
+
                 else:
                     [c_re_g, c_im_g, c_re_e, c_im_e ] = [ self.center_re_g, self.center_re_e, self.center_im_g, self.center_re_e ]
             else:
@@ -1662,9 +1667,9 @@ class SSResult:
 
 
         ### find angle 2*alpha (angle between two blolbs according to void-state)
-        angle_between_blobs = angle_three_points(c_re_g,c_im_g, void_re_mv,void_im_mv, c_re_e,c_im_e)
+        angle_between_blobs = angle_three_points(c_re_g,c_im_g, void_re,void_im, c_re_e,c_im_e)
 
-            ## SETTING BORDERS ### (now it is outside)
+        ## SETTING BORDERS ### (now it is outside)
         if not crop:
             [leftlim, rightlim, toplim, bottomlim ]= limits
             if leftlim is None:
@@ -1676,12 +1681,7 @@ class SSResult:
             if bottomlim is None:
                 bottomlim =np.min([  0,   np.min([ im_e, im_g ])  ])
         else:
-            [leftlim, rightlim, toplim, bottomlim ] = crop_fluctuations(re_g, im_g ,re_e, im_e, void_re=self.void_re_mv, void_im=self.void_im_mv )
-
-        # leftlim = np.min([ re_e, re_g, 0 ])
-        # rightlim = np.max([ re_e, re_g, 0 ])
-        # toplim = np.max([ im_e, im_g, 0 ])
-        # bottomlim = np.min([ im_e, im_g, 0 ])
+            [leftlim, rightlim, toplim, bottomlim ] = crop_fluctuations(re_g, im_g ,re_e, im_e, void_re=self.void_re, void_im=self.void_im )
 
         ### calculation of angle and distance between blolb centers
         [dist, theta] = complex_num_relationships(c_re_g,c_im_g,c_re_e,c_im_e)
@@ -1690,8 +1690,8 @@ class SSResult:
         print str_blob_place
 
         ### vectors of each states from void signal
-        [amp_g, ph_g] = complex_num_relationships(void_re_mv, void_im_mv, c_re_g,c_im_g)
-        [amp_e, ph_e] = complex_num_relationships(void_re_mv, void_im_mv, c_re_e,c_im_e)
+        [amp_g, ph_g] = complex_num_relationships(void_re, void_im, c_re_g,c_im_g)
+        [amp_e, ph_e] = complex_num_relationships(void_re, void_im, c_re_e,c_im_e)
 
         # str_g_place = 'Amp:'+ str(round(amp_g,2)) + '; Phase:'+ str(int( round(ph_g))  )
         # str_e_place = 'Amp:'+ str(round(amp_e,2)) + '; Phase:'+ str(int( round(ph_e))  )
@@ -1747,11 +1747,11 @@ class SSResult:
                 plt.title(title_str, color=title_color)
 
         if font is not None:
-            plt.xlabel('Re [mV]',fontproperties = font)
-            plt.ylabel('Im [mV]',fontproperties = font)
+            plt.xlabel('Re [V]',fontproperties = font)
+            plt.ylabel('Im [V]',fontproperties = font)
         else:
-            plt.xlabel('Re [mV]')
-            plt.ylabel('Im [mV]')
+            plt.xlabel('Re [V]')
+            plt.ylabel('Im [V]')
 
         plt.scatter(re_e, im_e, color=color_e, alpha=transpcy, s=markersize)
         plt.scatter(re_g, im_g, color=color_g, alpha=transpcy, s=markersize)
@@ -1768,17 +1768,17 @@ class SSResult:
         ### real plots
         plt.plot([c_re_g, c_re_e], [c_im_g, c_im_e], label=str_blob_place, color=color_dist, linewidth = vector_bw_blobs)              #plot line between blobs centers
         if zero_on_plot:
-            plt.plot([void_re_mv,c_re_g], [void_im_mv, c_im_g], color=color_g_vector, linewidth=vector_state_lw)        #plot line from VOID to |g> blob
-            plt.plot([void_re_mv,c_re_e], [void_im_mv, c_im_e], color=color_e_vector, linewidth=vector_state_lw)        #plot line from VOID to |e> blob
+            plt.plot([void_re,c_re_g], [void_im, c_im_g], color=color_g_vector, linewidth=vector_state_lw)        #plot line from VOID to |g> blob
+            plt.plot([void_re,c_re_e], [void_im, c_im_e], color=color_e_vector, linewidth=vector_state_lw)        #plot line from VOID to |e> blob
         if zero_on_plot:
-            plt.plot([0, void_re_mv], [0, void_im_mv], color=color_zero_vector, linewidth=vector_zero_lw)      #plot line form [0,0] to VOID
+            plt.plot([0, void_re], [0, void_im], color=color_zero_vector, linewidth=vector_zero_lw)      #plot line form [0,0] to VOID
 
         plt.plot([ c_re_g ],[ c_im_g ],'+', markersize=markersize*1.2, color=color_g_mean, label='g-state: '+str_g_place)  #this two needs only for legend color
         plt.plot([ c_re_e ],[ c_im_e ],'+', markersize=markersize*1.2, color=color_e_mean, label='e-state: '+str_e_place)
 
         if zero_on_plot:
-            plt.plot([void_re_mv ],[void_im_mv ],'+', label='Void zero: Re:'+ my_stround(void_re_mv,5,withminus=True)+ '; Im:'+ my_stround(void_im_mv,5,withminus=True) + '; 2*alpha='+ my_stround(angle_between_blobs,3,withminus=True), color=color_void )      #coordinats of no signal VOID (global)
-            plt.plot([0],[0],'+', color=color_zero )   #coordinats of 0 mV
+            plt.plot([void_re ],[void_im ],'+', label='Void zero: Re:'+ my_stround(void_re,5,withminus=True)+ '; Im:'+ my_stround(void_im,5,withminus=True) + '; 2*alpha='+ my_stround(angle_between_blobs,3,withminus=True), color=color_void )      #coordinats of no signal VOID (global)
+            plt.plot([0],[0],'+', color=color_zero )   #coordinats of 0 V
 
         if font is not None:
             leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='lower left', facecolor=legend_color,edgecolor=legend_frame_color, prop=font)
@@ -1786,7 +1786,7 @@ class SSResult:
             leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='lower left', facecolor=legend_color,edgecolor=legend_frame_color)
 
         for text in leg.get_texts():        #set color to legend text
-            plt.setp(text, size = fontsize)
+            # plt.setp(text, size = fontsize)
             plt.setp(text, color = legend_text_color)
 
 
@@ -1815,7 +1815,7 @@ class SSResult:
         else:
             return plt
 
-    def plot_hists(self, regime='raw_data', dark=True, log=True, save=False, savepath='', fname='Hists', lw=1, fig_transp=False, title_str='', font=None, figsize=None):
+    def plot_hists(self, regime='raw_data', dark=True, log=True, save=False, figsize=[15,10], savepath='', fname='Hists', lw=1, fig_transp=False, title_str='', font=None):
         '''
         function of plot histograms of object is it exists
         have different regimes:
@@ -2070,7 +2070,7 @@ class SSResult:
 
         if font is not None:
             plt.title(title_str, color=title_color,fontproperties = font)
-            plt.xlabel('[mV]',fontproperties = font)
+            plt.xlabel('[V]',fontproperties = font)
             plt.ylabel('Counts',fontproperties = font)
             leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='upper left', facecolor=legend_color, edgecolor=legend_frame_color,prop=font)
             for label in ax.get_xticklabels():  #set font to each xtick
@@ -2079,7 +2079,7 @@ class SSResult:
                 label.set_fontproperties(font)
         else:
             plt.title(title_str, color=title_color)
-            plt.xlabel('[mV]')
+            plt.xlabel('[V]')
             plt.ylabel('Counts')
             leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='upper left', facecolor=legend_color, edgecolor=legend_frame_color)
 
@@ -2134,6 +2134,8 @@ class SSResult:
         # plt.xlim(xmin, xmax)
         # plt.ylim(ymin, ymax)
         plt.plot(thr_vector, fid_vector, '.')
+        plt.xlabel('threshold [V]')
+        plt.ylabel('Fidelity')
 
 
         ##postselected
