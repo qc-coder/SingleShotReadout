@@ -1,3 +1,14 @@
+'''
+This is a library to support processing, analising and plotting the data
+form the single-shot qubit readout experiment (with a postselection).
+
+
+Vladimir Milchakov
+vladimir_ph@protonmail.com
+'''
+
+
+
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -214,7 +225,7 @@ def change_basis_blobs_inf(x0, y0, theta, *args_datapairs):
 
     return result_list
 
-def centers_two_blobs(re_g, im_g, re_e, im_e, simple_mean=True):
+def centers_two_blobs(re_g, im_g, re_e, im_e):
     '''
     Searching the centers of two blobs on i-q plane
     Takes ndarrays of Re_g, Im_g, Re_e, Im_e
@@ -612,6 +623,8 @@ class SSResult:
     ###---------------------------###
     ###### DATA ######
     ### Raw Data ###
+    CONVERT_TOMV=True       #Flag of convertion from [V] to [mV]
+
     void_re = 0
     void_im = 0
     re_g     = np.array([])
@@ -678,7 +691,7 @@ class SSResult:
     center_re_g = None
     center_re_e = None
     center_im_g = None
-    center_re_e = None
+    center_im_e = None
 
     ### Results ##########
     ### Count states ###
@@ -951,39 +964,33 @@ class SSResult:
         try:
             datatype = datatype(datafile)
 
+            if self.CONVERT_TOMV == True:
+                coef = 1000.0
+            else:
+                coef = 1.0
+
             if datatype == 'type2': ##new data
                 raw_data_ss = np.loadtxt(datafile)
-                self.re_g     = raw_data_ss[:,0]
-                self.im_g     = raw_data_ss[:,1]
-                self.re_e     = raw_data_ss[:,2]
-                self.im_e     = raw_data_ss[:,3]
-                self.re_g_pre = raw_data_ss[:,4]
-                self.im_g_pre = raw_data_ss[:,5]
-                self.re_e_pre = raw_data_ss[:,6]
-                self.im_e_pre = raw_data_ss[:,7]
+                self.re_g     = coef * raw_data_ss[:,0]
+                self.im_g     = coef * raw_data_ss[:,1]
+                self.re_e     = coef * raw_data_ss[:,2]
+                self.im_e     = coef * raw_data_ss[:,3]
+                self.re_g_pre = coef * raw_data_ss[:,4]
+                self.im_g_pre = coef * raw_data_ss[:,5]
+                self.re_e_pre = coef * raw_data_ss[:,6]
+                self.im_e_pre = coef * raw_data_ss[:,7]
                 print 'data loaded'
                 return True
             elif  datatype == 'type1':   ##old data
                 raw_data_ss = np.loadtxt(datafile)
-
-                ### this is logical according to labels, but g and e are inverted than (problem of data saving)
-                # self.re_g     = raw_data_ss[:,0]
-                # self.re_e     = raw_data_ss[:,1]
-                # self.im_g     = raw_data_ss[:,2]
-                # self.im_e     = raw_data_ss[:,3]
-                # self.re_g_pre = raw_data_ss[:,4]
-                # self.re_e_pre = raw_data_ss[:,5]
-                # self.im_g_pre = raw_data_ss[:,6]
-                # self.im_e_pre = raw_data_ss[:,7]
-
-                self.re_e     = raw_data_ss[:,0]
-                self.re_g     = raw_data_ss[:,1]
-                self.im_e     = raw_data_ss[:,2]
-                self.im_g     = raw_data_ss[:,3]
-                self.re_e_pre = raw_data_ss[:,4]
-                self.re_g_pre = raw_data_ss[:,5]
-                self.im_e_pre = raw_data_ss[:,6]
-                self.im_g_pre = raw_data_ss[:,7]
+                self.re_e     = coef * raw_data_ss[:,0]
+                self.re_g     = coef * raw_data_ss[:,1]
+                self.im_e     = coef * raw_data_ss[:,2]
+                self.im_g     = coef * raw_data_ss[:,3]
+                self.re_e_pre = coef * raw_data_ss[:,4]
+                self.re_g_pre = coef * raw_data_ss[:,5]
+                self.im_e_pre = coef * raw_data_ss[:,6]
+                self.im_g_pre = coef * raw_data_ss[:,7]
 
                 print 'data loaded'
                 return True
@@ -1500,7 +1507,7 @@ class SSResult:
         return True
 
     ### Drawing methods ###
-    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=[15,10], markersize=15, lw=1, transpcy=3e-2,  fname='Two_blob', savepath='', show=False, limits=[None,None,None,None], crop=True, fig_transp = False, dark=False, title_str=None, font=None, zero_on_plot=False, figax_return=False, pre_read=False):
+    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=[15,10], markersize=0.2, crosssize=10, lw=1, transpcy=100e-2,  fname='Two_blob', savepath='', show=False, limits=[None,None,None,None], crop=True, fig_transp = False, dark=False, title_str=None, font=None, zero_on_plot=False, figax_return=False, pre_read=False):
         '''
         Plots diagramm of scattering for two blobs on the i-q plane
         returns limits of axis (it is used for histograms)
@@ -1509,6 +1516,7 @@ class SSResult:
         if norm:
             if (self.x_g is None) or (self.x_e is None):
                 self.make_norm_data_from_raw()    ### do renormalization
+
             void_re = self.void_x
             void_im = self.void_y
             re_g     = self.x_g
@@ -1519,12 +1527,6 @@ class SSResult:
             im_g_p = self.y_g_pre
             re_e_p = self.x_e_pre
             im_e_p = self.y_e_pre
-            ### setting centers from fitted gauss
-            if centers is None:
-                if (self.center_x_g is not None) and (self.center_x_e is not None):
-                        [c_re_g, c_im_g, c_re_e, c_im_e ] = [ self.center_x_g, 0, self.center_x_e, 0  ]
-            else:
-                [c_re_g, c_im_g, c_re_e, c_im_e ] = centers
         else:
             if (self.re_g is None) or (self.im_g is None) or (self.re_e is None) or (self.im_e is None):
                 print 'It is no raw data. \n loading...'
@@ -1532,6 +1534,7 @@ class SSResult:
                 if not success_load:
                     print 'load was not successful'
                     return None
+
             void_re = self.void_re
             void_im = self.void_im
             re_g     = self.re_g
@@ -1548,20 +1551,22 @@ class SSResult:
                 re_e_pre = self.re_e_pre
                 im_e_pre = self.im_e_pre
 
-            if centers is None: ## if we didnt give coordinats to function
-                if (self.center_re_g is None) or (self.center_re_e is None) or (self.center_im_g is None) or (self.center_im_e is None):       ## and if there are no saved coodinats
-                    [c_re_g, c_im_g, c_re_e, c_im_e ] = centers_two_blobs(re_g, im_g, re_e, im_e)
-                    self.center_re_g = c_re_g
-                    self.center_im_g = c_im_g
-                    self.center_re_e = c_re_e
-                    self.center_im_e = c_im_e
-
-                else:
-                    [c_re_g, c_im_g, c_re_e, c_im_e ] = [ self.center_re_g, self.center_re_e, self.center_im_g, self.center_re_e ]
+        ### setting centers
+        if centers is not None:
+            [c_re_g, c_im_g, c_re_e, c_im_e] = centers
+        else:
+            if not norm:
+                if (self.center_re_g is None) or (self.center_re_e is None) or (self.center_im_g is None) or (self.center_im_e is None):
+                    [ self.center_re_g, self.center_im_g, self.center_re_e, self.center_im_e] = centers_two_blobs(re_g, im_g, re_e, im_e)
+                [c_re_g, c_im_g, c_re_e, c_im_e ] = [ self.center_re_g, self.center_im_g, self.center_re_e, self.center_im_e ]
             else:
-                [c_re_g, c_im_g, c_re_e, c_im_e ] = centers
+                if (self.center_x_g is not None) and (self.center_x_e is not None):
+                    [c_re_g, c_im_g, c_re_e, c_im_e ] = [ self.center_x_g, 0, self.center_x_e, 0  ]
+                else:
+                    print 'Error: data is not normalised'
 
-        ### SET CUSTOM FONT ###
+
+            ### SET CUSTOM FONT ###
         #1
         # plt.rc('font', family = 'DejaVuSans')
         ###-----------------###
@@ -1576,6 +1581,7 @@ class SSResult:
         vector_state_lw = 0.7*lw
         vector_zero_lw = 0.5*lw
         markersize = markersize
+        crosssize = crosssize
 
         if dark:
             color_g = my_colors_dict['blob_g']
@@ -1685,18 +1691,15 @@ class SSResult:
 
         ### calculation of angle and distance between blolb centers
         [dist, theta] = complex_num_relationships(c_re_g,c_im_g,c_re_e,c_im_e)
-        # str_blob_place = 'Distance:'+ str(round(dist, 2)) + '; Theta:' + str( int(round(theta)) )
-        str_blob_place = 'Distance:'+ my_stround(dist,4) + '; Theta:' + my_stround(theta,2,withminus=True)
+        str_blob_place = 'Distance:'+ my_stround(dist,4) + '; '+ u"\u03b8"+":" + my_stround(theta,2,withminus=True) + u"\u00b0"
         print str_blob_place
 
         ### vectors of each states from void signal
         [amp_g, ph_g] = complex_num_relationships(void_re, void_im, c_re_g,c_im_g)
         [amp_e, ph_e] = complex_num_relationships(void_re, void_im, c_re_e,c_im_e)
 
-        # str_g_place = 'Amp:'+ str(round(amp_g,2)) + '; Phase:'+ str(int( round(ph_g))  )
-        # str_e_place = 'Amp:'+ str(round(amp_e,2)) + '; Phase:'+ str(int( round(ph_e))  )
-        str_g_place = 'Amp:'+ my_stround(amp_g,5,withminus=True) + '; Phase:'+ my_stround(ph_g,4,withminus=True)
-        str_e_place = 'Amp:'+ my_stround(amp_e,5,withminus=True) + '; Phase:'+ my_stround(ph_e,4,withminus=True)
+        str_g_place = 'Amp:'+ my_stround(amp_g,5,withminus=True) + '; Phase:'+ my_stround(ph_g,4,withminus=True)+ u"\u00b0"
+        str_e_place = 'Amp:'+ my_stround(amp_e,5,withminus=True) + '; Phase:'+ my_stround(ph_e,4,withminus=True)+ u"\u00b0"
 
         amp_relation = my_stround(amp_e/amp_g,4,withminus=True)
         str_blob_place = str_blob_place + '; Ratio amps: '+ amp_relation
@@ -1720,7 +1723,6 @@ class SSResult:
             fig = plt.figure(fname, facecolor=fig_face_color, edgecolor = fig_border_color, figsize=(figsize[0],figsize[1]))
 
 
-        # fig = plt.figure(fname, facecolor=fig_face_color, edgecolor = fig_border_color)
 
         ax = fig.add_subplot(1, 1, 1) # nrows, ncols, index
         ax.set_facecolor(bg_color)
@@ -1746,12 +1748,17 @@ class SSResult:
             else:
                 plt.title(title_str, color=title_color)
 
-        if font is not None:
-            plt.xlabel('Re [V]',fontproperties = font)
-            plt.ylabel('Im [V]',fontproperties = font)
+        if self.CONVERT_TOMV:
+            lab_units = '[mV]'
         else:
-            plt.xlabel('Re [V]')
-            plt.ylabel('Im [V]')
+            lab_units = '[V]'
+
+        if font is not None:
+            plt.xlabel('Re '+lab_units, fontproperties = font)
+            plt.ylabel('Im '+lab_units, fontproperties = font)
+        else:
+            plt.xlabel('Re '+lab_units)
+            plt.ylabel('Im '+lab_units)
 
         plt.scatter(re_e, im_e, color=color_e, alpha=transpcy, s=markersize)
         plt.scatter(re_g, im_g, color=color_g, alpha=transpcy, s=markersize)
@@ -1770,14 +1777,14 @@ class SSResult:
         if zero_on_plot:
             plt.plot([void_re,c_re_g], [void_im, c_im_g], color=color_g_vector, linewidth=vector_state_lw)        #plot line from VOID to |g> blob
             plt.plot([void_re,c_re_e], [void_im, c_im_e], color=color_e_vector, linewidth=vector_state_lw)        #plot line from VOID to |e> blob
-        if zero_on_plot:
             plt.plot([0, void_re], [0, void_im], color=color_zero_vector, linewidth=vector_zero_lw)      #plot line form [0,0] to VOID
 
-        plt.plot([ c_re_g ],[ c_im_g ],'+', markersize=markersize*1.2, color=color_g_mean, label='g-state: '+str_g_place)  #this two needs only for legend color
-        plt.plot([ c_re_e ],[ c_im_e ],'+', markersize=markersize*1.2, color=color_e_mean, label='e-state: '+str_e_place)
+        plt.plot([ c_re_g ],[ c_im_g ], 'X', markersize=crosssize, color=color_g_mean, label='g-state: '+str_g_place)  #this two needs only for legend color
+        plt.plot([ c_re_e ],[ c_im_e ], 'X', markersize=crosssize, color=color_e_mean, label='e-state: '+str_e_place)
 
         if zero_on_plot:
-            plt.plot([void_re ],[void_im ],'+', label='Void zero: Re:'+ my_stround(void_re,5,withminus=True)+ '; Im:'+ my_stround(void_im,5,withminus=True) + '; 2*alpha='+ my_stround(angle_between_blobs,3,withminus=True), color=color_void )      #coordinats of no signal VOID (global)
+            zero_label = 'Void zero: Re:'+ my_stround(void_re,5,withminus=True)+ '; Im:'+ my_stround(void_im,5,withminus=True) + '; 2*alpha='+ my_stround(angle_between_blobs,3,withminus=True)+ u"\u00b0"
+            plt.plot([void_re],[void_im],'+', label=zero_label, color=color_void )      #coordinats of no signal VOID (global)
             plt.plot([0],[0],'+', color=color_zero )   #coordinats of 0 V
 
         if font is not None:
@@ -2068,9 +2075,14 @@ class SSResult:
         if title_str is '':
             title_str = self.timestamp
 
+        if self.CONVERT_TOMV:
+            lab_units = '[mV]'
+        else:
+            lab_units = '[V]'
+
         if font is not None:
             plt.title(title_str, color=title_color,fontproperties = font)
-            plt.xlabel('[V]',fontproperties = font)
+            plt.xlabel(lab_units, fontproperties = font)
             plt.ylabel('Counts',fontproperties = font)
             leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='upper left', facecolor=legend_color, edgecolor=legend_frame_color,prop=font)
             for label in ax.get_xticklabels():  #set font to each xtick
@@ -2079,7 +2091,7 @@ class SSResult:
                 label.set_fontproperties(font)
         else:
             plt.title(title_str, color=title_color)
-            plt.xlabel('[V]')
+            plt.xlabel(lab_units)
             plt.ylabel('Counts')
             leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='upper left', facecolor=legend_color, edgecolor=legend_frame_color)
 
@@ -2131,10 +2143,14 @@ class SSResult:
             fid_vector.append( get_fro_vs_threshold(x_g, x_e, thr) )
 
         pic = plt.figure()
-        # plt.xlim(xmin, xmax)
-        # plt.ylim(ymin, ymax)
+
+        if self.CONVERT_TOMV:
+            lab_units = '[mV]'
+        else:
+            lab_units = '[V]'
+
         plt.plot(thr_vector, fid_vector, '.')
-        plt.xlabel('threshold [V]')
+        plt.xlabel('threshold '+lab_units)
         plt.ylabel('Fidelity')
 
 
