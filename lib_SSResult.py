@@ -598,13 +598,13 @@ class Histogram:
             ### here we already know exact centers!
             min_y       = gauss_p[0]
             max_y       = gauss_p[1]
-            center_v   = gauss_p[2]
-            std_v      = gauss_p[3]
+            center_v    = gauss_p[2]
+            fw_at_06    = gauss_p[3]
 
-            sigma_v  = std_v/2
+            sigma_v  = fw_at_06/2
 
             h_x_fit     = [ y_gausfit, x_axis ]
-            p_list      = [ center_v, sigma_v, std_v, max_y, min_y ]
+            p_list      = [ center_v, sigma_v, fw_at_06, max_y, min_y ]
             return [h_x_fit, p_list]
 
         [ hist_x_fit, gaus_par_x ]  = fit_gauss( self.hist_xy, crop_thr=threshold, crop_sign=crop_sign )
@@ -2359,7 +2359,11 @@ class SSResult:
         ### fake plot just for string in legend
         if self.dict_param is not None:
             str_params = 'Rdt:'+ my_stround( self.dict_param['rudat'],4 )+'dB; t_read:'+my_stround( 1e9*self.dict_param['t_read'],3 )+'ns'
-        str_snr = 'Sigma_' + 'u.l.=' + str( round(self.hist_x_e.gauss_param[1],2) ) + '; std u.l.=' + str( round(self.hist_x_e.gauss_param[2],2) )
+        sig_e = self.hist_r_e.gauss_param[1]
+        sig_g = self.hist_r_g.gauss_param[1]
+        S_e = (2/sig_e)**2
+        S_g = (2/sig_g)**2
+        str_snr = 'Sigma_e' + '=' + str( round(sig_e,2) ) + '; Se='+ str( round(S_e,2) ) + '\nSigma_g' + '=' + str( round(sig_g,2) ) + '; Sg='+ str( round(S_g,2) )
         # ssssigma = u"\u03c3"
         plt.plot([],[], label = str_params, visible=False)
         plt.plot([],[], label = str_snr, visible=False)
