@@ -739,7 +739,7 @@ class SSResult:
     ############################################################################
     #### METHODS ###############################################################
 
-    def __init__(self, data=None, datafile=None, paramfile=None, nbins=100 ):
+    def __init__(self, data=None, datafile=None, paramfile=None, param=None, nbins=100 ):
 
         def get_timestamp(filename):
             '''
@@ -763,6 +763,7 @@ class SSResult:
         def get_parameters(filename):
             '''
             Takes file of parameters and extract parameters values. Returns dictionary.
+            From file
             '''
             ### opening file
             try:
@@ -834,6 +835,34 @@ class SSResult:
             else:
                 print 'Error of loading. Can not recognise the format of parameter file.'
                 return None
+
+        def get_paramobject(parameters):
+            '''
+            Takes file of parameters and extract parameters values. Returns dictionary.
+            From object Parameters
+            '''
+            ### opening file
+
+            # try:
+            par_dict = {'freq_read':0, 'power1':0, 't_read':0, 'rudat':0, 'freq_q':0, 'power2':0, 'rudat2':0, 'tpi':0, 'nsigma':0, 'cur':0}
+            NUM_OF_VALUES = 10
+
+            #fulfill dictionary and return
+            par_dict['freq_read']   = parameters.freq_read
+            par_dict['power1']      = parameters.power1
+            par_dict['t_read']      = parameters.t_read
+            par_dict['rudat']       = parameters.rudat
+            par_dict['freq_q']      = parameters.freq_q
+            par_dict['power2']      = parameters.power2
+            par_dict['rudat2']      = parameters.rudat2
+            par_dict['tpi']         = parameters.tpi
+            par_dict['nsigma']      = parameters.nsigma
+            par_dict['cur']         = parameters.current
+
+            return par_dict
+            # except:
+            #     print 'Warning! Loading parameters from object was not succeed.'
+            #     return None
 
         ########################################################################
         ###### ZERO ######
@@ -930,8 +959,6 @@ class SSResult:
         self.paramfile = paramfile
         if datafile is not None:
             self.timestamp = get_timestamp(datafile)
-        if paramfile is not None:
-            self.dict_param = get_parameters(paramfile)
 
         ##############################################
         ##############################################
@@ -944,6 +971,16 @@ class SSResult:
         else:
             print 'To load the data you should either give a datafile=... either data= list of numpy.arrays'
             print 'Error of loading data SSResult'
+
+        ### set up parameters
+        if paramfile is not None:
+            self.dict_param = get_parameters(paramfile)
+        elif param is not None:
+            self.dict_param = get_paramobject(param)
+        else:
+            self.dict_param = None
+            print 'warning: no parameters is attached to SSResult object'
+
 
 
         ### normalize it
@@ -995,28 +1032,27 @@ class SSResult:
             print 'Error SSResult take_data()'
             return False
 
-        ### switch from [Volts] to [mV] if it is aksed
-        if self.CONVERT_TOMV == True:
-            coef = 1000.0
-        else:
-            coef = 1.0
+        try:
+            ### switch from [Volts] to [mV] if it is aksed
+            if self.CONVERT_TOMV == True:
+                coef = 1000.0
+            else:
+                coef = 1.0
 
-        # [re_g, im_g, re_e, im_e, re_g_post, im_g_post, re_e_post, im_e_post]
-        self.re_g     = coef * data[0]
-        self.im_g     = coef * data[1]
-        self.re_e     = coef * data[2]
-        self.im_e     = coef * data[3]
-        self.re_g_pre = coef * data[4]
-        self.im_g_pre = coef * data[5]
-        self.re_e_pre = coef * data[6]
-        self.im_e_pre = coef * data[7]
+            # [re_g, im_g, re_e, im_e, re_g_post, im_g_post, re_e_post, im_e_post]
+            self.re_g     = coef * data[0]
+            self.im_g     = coef * data[1]
+            self.re_e     = coef * data[2]
+            self.im_e     = coef * data[3]
+            self.re_g_pre = coef * data[4]
+            self.im_g_pre = coef * data[5]
+            self.re_e_pre = coef * data[6]
+            self.im_e_pre = coef * data[7]
+            return True
 
-        return True
-
-
-        # except:
-        #     print 'some error of SSResult.take_data()'
-        #     return False
+        except:
+            print 'some error of SSResult.take_data()'
+            return False
 
     def load_data(self, datafile):
         '''
@@ -1858,15 +1894,15 @@ class SSResult:
 
         ### calculation of angle and distance between blolb centers
         [dist, theta] = complex_num_relationships(c_re_g,c_im_g,c_re_e,c_im_e)
-        str_blob_place = 'Distance:'+ my_stround(dist,4) + '; '+ u"\u03b8"+":" + my_stround(theta,2,withminus=True) + u"\u00b0"
+        str_blob_place = 'Distance:'+ my_stround(dist,4) + '; Theta' +":" + my_stround(theta,2,withminus=True) + 'deg'
         print str_blob_place
 
         ### vectors of each states from void signal
         [amp_g, ph_g] = complex_num_relationships(void_re, void_im, c_re_g,c_im_g)
         [amp_e, ph_e] = complex_num_relationships(void_re, void_im, c_re_e,c_im_e)
 
-        str_g_place = 'Amp:'+ my_stround(amp_g,5,withminus=True) + '; Phase:'+ my_stround(ph_g,4,withminus=True)+ u"\u00b0"
-        str_e_place = 'Amp:'+ my_stround(amp_e,5,withminus=True) + '; Phase:'+ my_stround(ph_e,4,withminus=True)+ u"\u00b0"
+        str_g_place = 'Amp:'+ my_stround(amp_g,5,withminus=True) + '; Phase:'+ my_stround(ph_g,4,withminus=True)+ 'deg'
+        str_e_place = 'Amp:'+ my_stround(amp_e,5,withminus=True) + '; Phase:'+ my_stround(ph_e,4,withminus=True)+ 'deg'
 
         amp_relation = my_stround(amp_e/amp_g,4,withminus=True)
         str_blob_place = str_blob_place + '; Ratio amps: '+ amp_relation
