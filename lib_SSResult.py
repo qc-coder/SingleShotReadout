@@ -1616,7 +1616,7 @@ class SSResult:
         return True
 
     ### Drawing methods ###
-    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=[15,10], markersize=0.2, crosssize=10, lw=1, transpcy=100e-2,  fname='Two_blob', savepath='', fig_transp = True, show=False, limits=[None,None,None,None], crop=True, dark=False, title_str=None, font=None, zero_on_plot=False, figax_return=False, pre_read=False):
+    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=[15,10], markersize=0.2, crosssize=10, lw=1, transpcy=100e-2,  fname='Two_blob', savepath='', fig_transp = True, show=False, limits=[None,None,None,None], crop=True, dark=True, title_str=None, font=None, zero_on_plot=False, figax_return=False, pre_read=False):
         '''
         Plots diagramm of scattering for two blobs on the i-q plane
         returns limits of axis (it is used for histograms)
