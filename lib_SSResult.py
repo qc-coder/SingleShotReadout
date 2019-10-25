@@ -739,7 +739,7 @@ class SSResult:
     ############################################################################
     #### METHODS ###############################################################
 
-    def __init__(self, datafile, paramfile=None, nbins=100):
+    def __init__(self, data=None, datafile=None, paramfile=None, nbins=100 ):
 
         def get_timestamp(filename):
             '''
@@ -928,7 +928,8 @@ class SSResult:
         ### set up metadata
         self.datafile = datafile
         self.paramfile = paramfile
-        self.timestamp = get_timestamp(datafile)
+        if datafile is not None:
+            self.timestamp = get_timestamp(datafile)
         if paramfile is not None:
             self.dict_param = get_parameters(paramfile)
 
@@ -936,7 +937,14 @@ class SSResult:
         ##############################################
 
         ### set up data measurement
-        self.load_data(datafile)
+        if datafile is not None:
+            self.load_data(datafile)
+        elif data is not None:
+            self.take_data(data)
+        else:
+            print 'To load the data you should either give a datafile=... either data= list of numpy.arrays'
+            print 'Error of loading data SSResult'
+
 
         ### normalize it
         self.make_norm_data_from_raw()
@@ -959,10 +967,57 @@ class SSResult:
         self.make_unitless_histograms()
 
 
-
         print 'Object is created'
 
     ### Process data methods ###
+    def take_data(self, data):
+        '''
+        Load data from the measurement
+        Takes list of numpy.arrays this shape
+        [re_g, im_g, re_e, im_e, re_g_post, im_g_post, re_e_post, im_e_post]
+        '''
+        try:
+            if type(data) is not list:
+                print 'SSR Error: data must be a list'
+                return False
+            if len(data) < 4:
+                print 'SSR Error: list of data is too short?'
+                return False
+            if len(data) > 12:
+                print 'SSR Error: list of data is too long?'
+                return False
+            for datum in data:
+                if type(datum) is not np.ndarray:
+                    print 'data should be a np.array'
+                    return False
+        except:
+            print 'error during checking!'
+            print 'Error SSResult take_data()'
+            return False
+
+        ### switch from [Volts] to [mV] if it is aksed
+        if self.CONVERT_TOMV == True:
+            coef = 1000.0
+        else:
+            coef = 1.0
+
+        # [re_g, im_g, re_e, im_e, re_g_post, im_g_post, re_e_post, im_e_post]
+        self.re_g     = coef * data[0]
+        self.im_g     = coef * data[1]
+        self.re_e     = coef * data[2]
+        self.im_e     = coef * data[3]
+        self.re_g_pre = coef * data[4]
+        self.im_g_pre = coef * data[5]
+        self.re_e_pre = coef * data[6]
+        self.im_e_pre = coef * data[7]
+
+        return True
+
+
+        # except:
+        #     print 'some error of SSResult.take_data()'
+        #     return False
+
     def load_data(self, datafile):
         '''
         function open file and create data sequences
@@ -1021,6 +1076,7 @@ class SSResult:
                 return True
             else:
                 print 'ERROR! Can not recognize data type'
+                return False
 
         except:
             print 'Warning load_data() error!'
@@ -1775,6 +1831,8 @@ class SSResult:
             if savepath == '':
                 savepath='savings\\'
 
+        str_fidelity = ''
+        str_params   = ''
         if self.dict_fidelity is not None:
             str_fidelity = 'F_post:'+my_stround(  100*self.dict_fidelity['F_post'],4 )+'% F:'+my_stround(  100*self.dict_fidelity['F'],4 )+'% F_gaus:'+my_stround(  100*self.dict_fidelity['F_gaus'],4 )+'%'
         if self.dict_param is not None:
@@ -2357,6 +2415,7 @@ class SSResult:
             plt.axvline(x=self.threshold_r, alpha=th_alpha, c=th_color, lw=th_width, ls=th_linestyle)
 
         ### fake plot just for string in legend
+        str_params = ''
         if self.dict_param is not None:
             str_params = 'Rdt:'+ my_stround( self.dict_param['rudat'],4 )+'dB; t_read:'+my_stround( 1e9*self.dict_param['t_read'],3 )+'ns'
         sig_e = self.hist_r_e.gauss_param[1]
