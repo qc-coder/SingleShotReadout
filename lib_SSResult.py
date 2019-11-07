@@ -678,6 +678,7 @@ class SSResult:
     dict_param = None
 
     ### e-g-State definition ###
+    # THETA = 0       #angle of rotation
     threshold = None
     sign_ge = +1     #COULD BE +-1 depends on e>g or g>e
 
@@ -983,7 +984,7 @@ class SSResult:
 
 
 
-        ### normalize it
+        # ### normalize it
         self.make_norm_data_from_raw()
 
         ### find the best threshold and shift the data
@@ -1156,21 +1157,29 @@ class SSResult:
         ##########______NORMALIZATION________###################################
         ### find centers of blobs
         [c_re_g, c_im_g, c_re_e, c_im_e ] = centers_two_blobs(re_g, im_g, re_e, im_e)
+        print 'raw centers of blobs:'
+        print '|g>:', c_re_g, c_im_g
+        print '|e>:', c_re_e, c_im_e
 
         ### find angle 2*alpha (angle between two blolbs according to void-state)
         angle_between_blobs = angle_three_points(c_re_g,c_im_g, self.void_re,self.void_im, c_re_e,c_im_e)
+        print 'angle between centers and void:'
+        print round(angle_between_blobs), 'deg'
 
         ### find distance and theta between this centers
         [dist, theta] = complex_num_relationships(c_re_g,c_im_g,c_re_e,c_im_e)      #extract theta
         threshold_re = np.mean([c_re_g, c_re_e])  #x0
         threshold_im = np.mean([c_im_g, c_im_e])  #y0
 
+
+        print 'tilt angle:', round(theta), 'deg'
+        print 'raw threshold: ', threshold_re, threshold_im
+
         ### change the basis according to positions of blobs centers
         [ [re_g, im_g], [re_e, im_e] ]                      = change_basis_blobs_inf(threshold_re, threshold_im, theta, [re_g, im_g] , [re_e, im_e] )
         [ [re_g_pre, im_g_pre],  [re_e_pre, im_e_pre] ]     = change_basis_blobs_inf(threshold_re, threshold_im, theta, [re_g_pre, im_g_pre] , [re_e_pre, im_e_pre] )
-
         # normalize VOID state
-        [void_re,void_im]                             = change_basis_point(self.void_re, self.void_im, threshold_re, threshold_im, theta)
+        [void_re,void_im]                                   = change_basis_point(self.void_re, self.void_im, threshold_re, threshold_im, theta)
 
         ########_____SAVING____________#########################################
         self.void_x      = void_re
@@ -1189,7 +1198,7 @@ class SSResult:
 
         self.center_x_g = c_x_g
         self.center_x_e = c_x_e
-        print 'new center of blobs: ', self.center_x_g, ' ', self.center_x_e
+        print 'new center of blobs (x_g, x_e): ', self.center_x_g, ' ', self.center_x_e
 
         print 'data was normalised and saved'
         return True
