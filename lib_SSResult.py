@@ -32,7 +32,9 @@ my_colors_dict = {  'redberry'      :'#970000',
                     'blob_e'        :'#fd6e6e',
                     'blob_post'     :'#1b346e',
                     'g_state_mark'  :'#849cd4',
+                    # 'g_state_mark'  :'#2b488a',
                     'e_state_mark'  :'#fe9393',
+                    # 'e_state_mark'  :'#a53030',
                     'meduza_dark'   :'#262626',
                     'gauss_green'   :'#bacc5f'
 
@@ -177,22 +179,56 @@ def angle_three_points(x1,y1,x2,y2,x3,y3):
 
     return angle
 
+#old
+# def change_basis_point(x,y, x0, y0, theta):
+#     '''
+#     Change the basis of one point.
+#     takes coordinates of one point and bassis as [x0,y0, theta(grad)]
+#     return coordinatees in a new basis
+#     '''
+#     ### shift the point
+#     x1 = x -x0
+#     y1 = y -y0
+#
+#     #convert theta to radians
+#     theta = np.radians(theta)
+#
+#     ### rotate the vector clockwise
+#     x2 =  x1*np.cos(theta) + y1*np.sin(theta)
+#     y2 = -x1*np.sin(theta) + y1*np.cos(theta)
+#
+#
+#    ### rotate than shift
+#    # #convert theta to radians
+#    # theta = np.radians(theta)
+#    # ### rotate the vector clockwise
+#    # x1 =  x*np.cos(theta) + y*np.sin(theta)
+#    # y1 = -x*np.sin(theta) + y*np.cos(theta)
+#    # ###shift on rotated center
+#    # x00 =  x0*np.cos(theta) + y0*np.sin(theta)
+#    # y00 = -x0*np.sin(theta) + y0*np.cos(theta)
+#    # x2 = x1 -x00
+#    # y2 = y1 -y00
+#    # return [x2,y2]
+#
+#     return [x2,y2]
+
 def change_basis_point(x,y, x0, y0, theta):
     '''
     Change the basis of one point.
     takes coordinates of one point and bassis as [x0,y0, theta(grad)]
     return coordinatees in a new basis
+    First shift, than rotate. Save shift as if shift was after rotation
     '''
-    #convert theta to radians
-    theta = np.radians(theta)
-
     ### shift the point
     x1 = x -x0
     y1 = y -y0
-
+    #convert theta to radians
+    theta = np.radians(theta)
     ### rotate the vector clockwise
     x2 =  x1*np.cos(theta) + y1*np.sin(theta)
     y2 = -x1*np.sin(theta) + y1*np.cos(theta)
+    ########
 
     return [x2,y2]
 
@@ -224,6 +260,7 @@ def change_basis_blobs_inf(x0, y0, theta, *args_datapairs):
         result_list.append(data_norm)   #add sequence in a new basis to the list
 
     return result_list
+
 
 def centers_two_blobs(re_g, im_g, re_e, im_e):
     '''
@@ -492,7 +529,7 @@ class Histogram:
 
         self.hist_xy = hist_tuple_to_xy_func(self.hist)
 
-    def fit(self, threshold, crop_sign):
+    def fit(self, threshold, crop_sign, do_crop=True):
         '''
         decorator for function fit_gauss
         fit itself
@@ -505,7 +542,6 @@ class Histogram:
             crop_thr: if it is None - than we fit all the data. If it is threshold_value than we do crop
             if crop_sign is positive - than we take points more than threshold
             if crop_sign is negative - than we take points less than threshold
-
             '''
 
             def get_only_one_state_histxy(histxy, th=0, sign_ge=+1, state=+1):
@@ -607,7 +643,11 @@ class Histogram:
             p_list      = [ center_v, sigma_v, fw_at_06, max_y, min_y ]
             return [h_x_fit, p_list]
 
-        [ hist_x_fit, gaus_par_x ]  = fit_gauss( self.hist_xy, crop_thr=threshold, crop_sign=crop_sign )
+        if do_crop:
+            [ hist_x_fit, gaus_par_x ]  = fit_gauss( self.hist_xy, crop_thr=threshold, crop_sign=crop_sign )
+        else:
+            [ hist_x_fit, gaus_par_x ]  = fit_gauss( self.hist_xy)
+
         self.gauss_fit           = hist_x_fit
         self.gauss_param         = gaus_par_x
 
@@ -647,6 +687,10 @@ class SSResult:
     y_e         = None
     y_g_p       = None
     y_e_pre     = None
+    ### Save parameters of transformation of data
+    THETA = 0       ## angle of rotation to go from re-im to x-y
+    SHIFT_X = 0     ## x shift was done after rotation
+    SHIFT_Y = 0     ## y shift was done after rotation
 
     ### Normalised Data after Postselection ###
     x_g_select  = None
@@ -661,6 +705,9 @@ class SSResult:
     hist_x_e_pre     = None
     hist_x_g_select  = None
     hist_x_e_select  = None
+
+    hist_y_g         = None
+    hist_y_e         = None
 
     ###---------------------------###
     ###### MetaData ######
@@ -678,7 +725,6 @@ class SSResult:
     dict_param = None
 
     ### e-g-State definition ###
-    # THETA = 0       #angle of rotation
     threshold = None
     sign_ge = +1     #COULD BE +-1 depends on e>g or g>e
 
@@ -687,6 +733,10 @@ class SSResult:
     center_x_e = None
     center_x_g_select = None # it is different. I dont know why yet
     center_x_e_select = None
+    sizeblob_x_g = None
+    sizeblob_x_e = None
+    sizeblob_y_g = None
+    sizeblob_y_e = None
 
     # ### for future - need a back rotation #(normalisation)^-1
     center_re_g = None
@@ -740,7 +790,7 @@ class SSResult:
     ############################################################################
     #### METHODS ###############################################################
 
-    def __init__(self, data=None, datafile=None, paramfile=None, param=None, nbins=100 ):
+    def __init__(self, data=None, datafile=None, paramfile=None, param=None, nbins=400, all_included=True):
 
         def get_timestamp(filename):
             '''
@@ -776,6 +826,7 @@ class SSResult:
                 return None
 
             if ( len(lines)== 45 ):      ### new format of parameters file
+                print '2nd generation of parameters object'
                 par_dict = {'freq_read':0, 'power1':0, 't_read':0, 'rudat':0, 'freq_q':0, 'power2':0, 'rudat2':0, 'tpi':0, 'nsigma':0, 'cur':0}
                 NUM_OF_VALUES = 10
 
@@ -805,7 +856,7 @@ class SSResult:
 
 
             elif ( len(lines)== 41 ):
-                print 'Caution! An old format of parameters.'
+                print 'Caution! 1st generation of parameters object'
                 par_dict = {'power1':0, 'freq_read':0, 't_read':0, 'rudat':0, 'power2':0, 'freq_q':0, 'tpi':0, 'cur':0, 'nsigma':0, 'rudat2':None}
                 NUM_OF_VALUES = 9
 
@@ -832,6 +883,37 @@ class SSResult:
 
                 return par_dict
 
+            elif ( len(lines)== 49):
+                print '3rd generation of parameters object'
+                par_dict = {'power1':0, 'freq_read':0, 't_read':0, 'rudat':0, 'power2':0, 'freq_q':0, 'tpi':0, 'cur':0, 'nsigma':0, 'rudat2':None, 'phase1':None}
+                NUM_OF_VALUES = 11
+
+                # extract numbers from string one by one
+                string = lines[48]
+                list_of_values_str = []
+                for i in range(NUM_OF_VALUES):
+                    ## it is 9 parameters to read
+                    cut_end = string.find('\t')
+                    str = string[ 0: cut_end ]
+                    list_of_values_str.append(float(str))
+                    string = string[ cut_end+1 : ]
+
+                #fulfill dictionary and return
+                par_dict['freq_read'] = list_of_values_str[0]
+                par_dict['power1'] =    list_of_values_str[1]
+                par_dict['t_read'] =    list_of_values_str[2]
+                par_dict['rudat']  =    list_of_values_str[3]
+                par_dict['freq_q'] =    list_of_values_str[4]
+                par_dict['power2'] =    list_of_values_str[5]
+                par_dict['rudat2'] =    list_of_values_str[6]
+                par_dict['tpi']    =    list_of_values_str[7]
+                par_dict['nsigma'] =    list_of_values_str[8]
+                par_dict['cur']    =    list_of_values_str[9]
+                par_dict['phase1']    =    list_of_values_str[10]
+
+                return par_dict
+
+
 
             else:
                 print 'Error of loading. Can not recognise the format of parameter file.'
@@ -845,25 +927,59 @@ class SSResult:
             ### opening file
 
             # try:
-            par_dict = {'freq_read':0, 'power1':0, 't_read':0, 'rudat':0, 'freq_q':0, 'power2':0, 'rudat2':0, 'tpi':0, 'nsigma':0, 'cur':0}
-            NUM_OF_VALUES = 10
+            par_dict = {'freq_read':0, 'power1':0, 't_read':0, 'rudat':0, 'freq_q':0, 'power2':0, 'rudat2':0, 'tpi':0, 'nsigma':0, 'cur':0, 'phase1':0}
+            NUM_OF_VALUES = 11
 
             #fulfill dictionary and return
-            par_dict['freq_read']   = parameters.freq_read
-            par_dict['power1']      = parameters.power1
-            par_dict['t_read']      = parameters.t_read
-            par_dict['rudat']       = parameters.rudat
-            par_dict['freq_q']      = parameters.freq_q
-            par_dict['power2']      = parameters.power2
-            par_dict['rudat2']      = parameters.rudat2
-            par_dict['tpi']         = parameters.tpi
-            par_dict['nsigma']      = parameters.nsigma
-            par_dict['cur']         = parameters.current
+            try:
+                par_dict['freq_read']   = parameters.freq_read
+            except:
+                print 'cant load freq_read from parameters'
+            try:
+                par_dict['power1']      = parameters.power1
+            except:
+                print 'cant load power1 from parameters'
+            try:
+                par_dict['t_read']      = parameters.t_read
+            except:
+                print 'cant load t_read from parameters'
+            try:
+                par_dict['rudat']       = parameters.rudat
+            except:
+                print 'cant load rudat from parameters'
+            try:
+                par_dict['freq_q']      = parameters.freq_q
+            except:
+                print 'cant load freq_q from parameters'
+            try:
+                par_dict['power2']      = parameters.power2
+            except:
+                print 'cant load power2 from parameters'
+            try:
+                par_dict['rudat2']      = parameters.rudat2
+            except:
+                print 'cant load rudat2 from parameters'
+            try:
+                par_dict['tpi']         = parameters.tpi
+            except:
+                print 'cant load tpi from parameters'
+            try:
+                par_dict['nsigma']      = parameters.nsigma
+            except:
+                print 'cant load nsigma from parameters'
+            try:
+                par_dict['cur']         = parameters.current
+            except:
+                print 'cant load current from parameters'
+            try:
+                par_dict['phase1']         = parameters.phase1
+            except:
+                print 'cant load phase1 from parameters'
+
+            print 'parameters loaded'
 
             return par_dict
-            # except:
-            #     print 'Warning! Loading parameters from object was not succeed.'
-            #     return None
+
 
         ########################################################################
         ###### ZERO ######
@@ -878,6 +994,11 @@ class SSResult:
         self.im_g_pre = np.array([])
         self.re_e_pre = np.array([])
         self.im_e_pre = np.array([])
+
+        ### save angle of rotation and shifting the data
+        self.THETA = 0
+        self.SHIFT_X = 0
+        self.SHIFT_Y = 0
 
         ### Normalised Data ###
         self.void_x = 0
@@ -896,6 +1017,22 @@ class SSResult:
         self.x_e_select  = None
         self.y_g_select  = None
         self.y_e_select  = None
+
+        ### centers of blobs (in first approximation - np.mean, after taken from gauss fit)
+        center_x_g = None
+        center_x_e = None
+        center_x_g_select = None # it is different. I dont know why yet
+        center_x_e_select = None
+        sizeblob_x_g = None
+        sizeblob_x_e = None
+        sizeblob_y_g = None
+        sizeblob_y_e = None
+
+        # ### for future - need a back rotation #(normalisation)^-1
+        center_re_g = None
+        center_re_e = None
+        center_im_g = None
+        center_im_e = None
 
         ### dimensionless R-axis (like X in [V])#####-------##
         self.r_g         = None
@@ -918,6 +1055,9 @@ class SSResult:
         self.hist_x_e_pre     = None
         self.hist_x_g_select  = None
         self.hist_x_e_select  = None
+
+        self.hist_y_g         = None
+        self.hist_y_e         = None
 
         self.dict_fidelity = {
         'F'         : 0,
@@ -983,26 +1123,39 @@ class SSResult:
             print 'warning: no parameters is attached to SSResult object'
 
 
+        if all_included:
+            ### normalize it
+            try:
+                self.make_norm_data_from_raw()
+            except:
+                print '     ___SSResult error during normalisation'
 
-        # ### normalize it
-        self.make_norm_data_from_raw()
+            ### find the best threshold and shift the data
+            try:
+                self.set_best_threshold()
+                self.shift_x_to_threshold_be_zero()
+            except:
+                print '     ___SSResult error during setting threshold'
 
-        ### find the best threshold and shift the data
-        self.set_best_threshold()
-        self.shift_x_to_threshold_be_zero()
+            ### do postselection
+            try:
+                if self.make_postselected_data_from_norm() != False:
+                ### make histograms
+                    self.make_histograms(nbins = nbins)
+                    self.make_histograms_y(nbins = nbins)
+                ### calculate fidelity
+                    self.calculate_fidelity_post()
+                else:
+                    print 'smth went wrong'
+            except:
+                print '     ___SSResult error during postselection'
 
-        ### do postselection
-        if self.make_postselected_data_from_norm() != False:
-        ### make histograms
-            self.make_histograms(nbins = nbins)
-        ### calculate fidelity
-            self.calculate_fidelity_post()
-        else:
-            print 'smth went wrong'
-
-        ## go from x mV to unitless variable r for S extraction
-        self.make_x_dimensionless()
-        self.make_unitless_histograms()
+            ## go from x mV to unitless variable r for S extraction
+            try:
+                self.make_x_dimensionless()
+                self.make_unitless_histograms(nbins = nbins)
+            except:
+                print '     ___SSResult error during making unitless histograms'
 
 
         print 'Object is created'
@@ -1157,31 +1310,28 @@ class SSResult:
         ##########______NORMALIZATION________###################################
         ### find centers of blobs
         [c_re_g, c_im_g, c_re_e, c_im_e ] = centers_two_blobs(re_g, im_g, re_e, im_e)
-        print 'raw centers of blobs:'
-        print '|g>:', c_re_g, c_im_g
-        print '|e>:', c_re_e, c_im_e
 
         ### find angle 2*alpha (angle between two blolbs according to void-state)
         angle_between_blobs = angle_three_points(c_re_g,c_im_g, self.void_re,self.void_im, c_re_e,c_im_e)
-        print 'angle between centers and void:'
-        print round(angle_between_blobs), 'deg'
 
         ### find distance and theta between this centers
         [dist, theta] = complex_num_relationships(c_re_g,c_im_g,c_re_e,c_im_e)      #extract theta
         threshold_re = np.mean([c_re_g, c_re_e])  #x0
         threshold_im = np.mean([c_im_g, c_im_e])  #y0
 
-
-        print 'tilt angle:', round(theta), 'deg'
-        print 'raw threshold: ', threshold_re, threshold_im
-
         ### change the basis according to positions of blobs centers
         [ [re_g, im_g], [re_e, im_e] ]                      = change_basis_blobs_inf(threshold_re, threshold_im, theta, [re_g, im_g] , [re_e, im_e] )
         [ [re_g_pre, im_g_pre],  [re_e_pre, im_e_pre] ]     = change_basis_blobs_inf(threshold_re, threshold_im, theta, [re_g_pre, im_g_pre] , [re_e_pre, im_e_pre] )
+
         # normalize VOID state
-        [void_re,void_im]                                   = change_basis_point(self.void_re, self.void_im, threshold_re, threshold_im, theta)
+        [void_re,void_im]                             = change_basis_point(self.void_re, self.void_im, threshold_re, threshold_im, theta)
+        ### Calculate shift after rotation
+        [x00, y00] = change_basis_point(0,0, threshold_re,threshold_im, theta)
 
         ########_____SAVING____________#########################################
+        self.THETA   = self.THETA + theta
+        self.SHIFT_X = self.SHIFT_X -x00
+        self.SHIFT_Y = self.SHIFT_Y -y00
         self.void_x      = void_re
         self.void_y      = void_im
         self.x_g            = re_g
@@ -1198,7 +1348,7 @@ class SSResult:
 
         self.center_x_g = c_x_g
         self.center_x_e = c_x_e
-        print 'new center of blobs (x_g, x_e): ', self.center_x_g, ' ', self.center_x_e
+        print 'new center of blobs: ', self.center_x_g, ' ', self.center_x_e
 
         print 'data was normalised and saved'
         return True
@@ -1350,21 +1500,24 @@ class SSResult:
         [self.void_x] = shifter([self.void_x], threshold)
 
         ### ( !V why is it commented 191023 )
+        ### ( !V uncommented 191110 works same)
         # ### shift the center of blobs also
-        # if self.center_x_g is not None:
-        #     [self.center_x_g] = shifter([self.center_x_g], threshold)
-        # if self.center_x_e is not None:
-        #     [self.center_x_g] = shifter([self.center_x_e], threshold)
+        if self.center_x_g is not None:
+            [self.center_x_g] = shifter([self.center_x_g], threshold)
+        if self.center_x_e is not None:
+            [self.center_x_e] = shifter([self.center_x_e], threshold)
+        print 'new centers of blobs:', self.center_x_g, self.center_x_e
 
         ### Kostil: And if the data is shifted we need also to shift histograms if it is exist!
         if (self.hist_x_g is not None) or (self.hist_x_e is not None) or (self.hist_x_g_select is not None)or (self.hist_x_e_select is not None):
             print 'we redo histograms, because of the shift'
             self.make_histograms()
 
+        [self.SHIFT_X] = shifter([self.SHIFT_X], -threshold)
 
         self.threshold = 0
 
-        print 'x-data shifted. threshold=0'
+        print 'x-data shifted on', threshold, '. threshold=0'
         return True
 
     def make_x_dimensionless(self):
@@ -1478,7 +1631,6 @@ class SSResult:
         of fit the gauss and plot it (remove this part)
         '''
         ########################################################################
-
         ### if no data - load it
         if self.x_g is None or self.x_e is None:
             success_norm = self.make_norm_data_from_raw()
@@ -1506,6 +1658,13 @@ class SSResult:
         ### set a new center
         self.center_x_g = self.hist_x_g.gauss_param[0]
         self.center_x_e = self.hist_x_e.gauss_param[0]
+        self.sizeblob_x_g = 2*self.hist_x_g.gauss_param[2]
+        self.sizeblob_x_e = 2*self.hist_x_e.gauss_param[2]
+
+        ### rotate this center to raw data scale
+        [self.center_re_g, self.center_im_g] = change_basis_point(self.center_x_g,0, -self.SHIFT_X, -self.SHIFT_Y, -self.THETA)
+        [self.center_re_e, self.center_im_e] = change_basis_point(self.center_x_e,0, -self.SHIFT_X, -self.SHIFT_Y, -self.THETA)
+
 
         ### making hists and fit for x_g_pre & x_e_pre ###
         if self.x_g_pre is not None:
@@ -1529,6 +1688,37 @@ class SSResult:
 
         ### making hists and fit for x_g_pre & x_e_pre ###
         print 'histograms made'
+        return True
+
+    def make_histograms_y(self, nbins=100):
+        ### if no data - load it
+        if self.y_g is None or self.y_e is None:
+            success_norm = self.make_norm_data_from_raw()
+            success_th = self.set_best_threshold()      #if we load new norm data - we need to redefine a threshold
+            if (not success_norm) or (not success_th):
+                print 'can not normalise or set threshold. error of make_histograms()'
+                return False
+
+        g_crop_s = -self.sign_ge
+        e_crop_s =  self.sign_ge ##here it is meaningless
+        ### making hists and fit for x_g & x_e ###
+        self.hist_y_g = Histogram(self.y_g, nbins = nbins)
+        self.hist_y_g.fit(0,0,do_crop=False)
+        self.hist_y_e = Histogram(self.y_e, nbins = nbins)
+        self.hist_y_e.fit(0,0,do_crop=False)
+
+        ### set a new center
+        self.center_y_g = self.hist_y_g.gauss_param[0]
+        self.center_y_e = self.hist_y_e.gauss_param[0]
+        self.sizeblob_y_g = 2*self.hist_y_g.gauss_param[2]
+        self.sizeblob_y_e = 2*self.hist_y_e.gauss_param[2]
+
+        ### make points for rectangle around blobs and rotate its coordinates
+        ## example from make_hists()
+        # [self.center_re_g, self.center_im_g] = change_basis_point(self.center_x_g,0, -self.SHIFT_X, -self.SHIFT_Y, -self.THETA)
+        # [self.center_re_e, self.center_im_e] = change_basis_point(self.center_x_e,0, -self.SHIFT_X, -self.SHIFT_Y, -self.THETA)
+
+
         return True
 
     def make_unitless_histograms(self, nbins=100):
@@ -1717,10 +1907,11 @@ class SSResult:
         return True
 
     ### Drawing methods ###
-    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=[15,10], markersize=0.2, crosssize=10, lw=1, transpcy=100e-2,  fname='Two_blob', savepath='', fig_transp = True, show=False, limits=[None,None,None,None], crop=True, dark=True, title_str=None, font=None, zero_on_plot=False, figax_return=False, pre_read=False):
+    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=[15,10], markersize=0.2, crosssize=10, lw=1, transpcy=100e-2,  fname='Two_blob', savepath='', fig_transp = True, show=False, limits=[None,None,None,None], crop=True, dark=True, title_str=None, font=None, zero_on_plot=False, pre_read=False):
         '''
         Plots diagramm of scattering for two blobs on the i-q plane
         returns limits of axis (it is used for histograms)
+        if want to set the limits dont forget to make 'crop=False'
         figsize - in inches!
         '''
         if norm:
@@ -1935,7 +2126,6 @@ class SSResult:
             fig = plt.figure(fname, facecolor=fig_face_color, edgecolor = fig_border_color, figsize=(figsize[0],figsize[1]))
 
 
-
         ax = fig.add_subplot(1, 1, 1) # nrows, ncols, index
         ax.set_facecolor(bg_color)
 
@@ -1949,7 +2139,7 @@ class SSResult:
 
         plt.grid(color=grid_color, alpha= grid_transp)
 
-        if title_str is None:
+        if title_str is None or title_str=='':
             if font is not None:
                 plt.title(self.timestamp, color=title_color,fontproperties = font)
             else:
@@ -1994,6 +2184,20 @@ class SSResult:
         plt.plot([ c_re_g ],[ c_im_g ], 'X', markersize=crosssize, color=color_g_mean, label='g-state: '+str_g_place)  #this two needs only for legend color
         plt.plot([ c_re_e ],[ c_im_e ], 'X', markersize=crosssize, color=color_e_mean, label='e-state: '+str_e_place)
 
+        # ### plot x-size of blobs
+        # def rectangle_from_center_and_length(c_x,c_y,l_x,l_y):
+        #
+        #     return [x1,y1, x2,y2, x3,y3, x4,y4]
+        if norm:
+            if (self.sizeblob_x_g is not None):
+                plt.plot([ self.center_x_g - self.sizeblob_x_g/2, self.center_x_g + self.sizeblob_x_g/2 ], [0,0], color='b', lw=2)
+            if (self.sizeblob_x_e is not None):
+                plt.plot([ self.center_x_e - self.sizeblob_x_e/2, self.center_x_e + self.sizeblob_x_e/2 ], [0,0], color='r', lw=2)
+            if (self.sizeblob_y_g is not None):
+                plt.plot([self.center_x_g,self.center_x_g], [ self.center_y_g - self.sizeblob_y_g/2, self.center_y_g + self.sizeblob_y_g/2 ],  color='b', lw=2)
+            if (self.sizeblob_y_e is not None):
+                plt.plot([self.center_x_e,self.center_x_e], [ self.center_y_e - self.sizeblob_y_e/2, self.center_y_e + self.sizeblob_y_e/2 ],  color='r', lw=2)
+
         if zero_on_plot:
             zero_label = 'Void zero: Re:'+ my_stround(void_re,5,withminus=True)+ '; Im:'+ my_stround(void_im,5,withminus=True) + '; 2*alpha='+ my_stround(angle_between_blobs,3,withminus=True)+ u"\u00b0"
             plt.plot([void_re],[void_im],'+', label=zero_label, color=color_void )      #coordinats of no signal VOID (global)
@@ -2025,16 +2229,12 @@ class SSResult:
 
         if show:
             plt.show()
-        else:
-            if figax_return:
-                plt.close()
-
-        if figax_return: ## it uses for animations
             return [fig, ax]
         else:
-            return plt
+            plt.close()
+            return True
 
-    def plot_hists(self, regime='raw_data', dark=True, log=True, save=False, figsize=[15,10], savepath='', fname='Hists', lw=1, fig_transp=False, title_str='', font=None):
+    def plot_hists(self, regime='raw_data', dark=True, log=True, save=False, figsize=[15,10], savepath='', fname='Hists', lw=1, fig_transp=False, title_str='', font=None, show=False, limits=[None,None]):
         '''
         function of plot histograms of object is it exists
         have different regimes:
@@ -2174,6 +2374,12 @@ class SSResult:
             if (self.center_x_g is not None) and (self.center_x_e is not None):
                 plt.axvline(x=self.center_x_g, alpha=th_alpha, c=color_g_mean, lw=th_width, ls=th_linestyle)
                 plt.axvline(x=self.center_x_e, alpha=th_alpha, c=color_e_mean, lw=th_width, ls=th_linestyle)
+            if (self.sizeblob_x_g is not None) and (self.sizeblob_x_e is not None):
+                plt.axvline(x=self.center_x_g - self.sizeblob_x_g/2, alpha=th_alpha/2, c=color_g_mean, lw=th_width, ls=th_linestyle)
+                plt.axvline(x=self.center_x_g + self.sizeblob_x_g/2, alpha=th_alpha/2, c=color_g_mean, lw=th_width, ls=th_linestyle)
+                plt.axvline(x=self.center_x_e - self.sizeblob_x_e/2, alpha=th_alpha/2, c=color_e_mean, lw=th_width, ls=th_linestyle)
+                plt.axvline(x=self.center_x_e + self.sizeblob_x_e/2, alpha=th_alpha/2, c=color_e_mean, lw=th_width, ls=th_linestyle)
+
             #### plot x_g, x_e hists ####
             if (self.hist_x_g.hist_xy is not None) and (self.hist_x_e.hist_xy is not None):
                 hist_g   = self.hist_x_g.hist_xy
@@ -2224,6 +2430,11 @@ class SSResult:
             if (self.center_x_g_select is not None) and (self.center_x_e_select is not None):
                 plt.axvline(x=self.center_x_g_select, alpha=th_alpha, c=color_g_mean, lw=th_width, ls=th_linestyle)
                 plt.axvline(x=self.center_x_e_select, alpha=th_alpha, c=color_e_mean, lw=th_width, ls=th_linestyle)
+            if (self.sizeblob_x_g is not None) and (self.sizeblob_x_e is not None):
+                plt.axvline(x=self.center_x_g - self.sizeblob_x_g/2, alpha=th_alpha/2, c=color_g_mean, lw=th_width, ls=th_linestyle)
+                plt.axvline(x=self.center_x_g + self.sizeblob_x_g/2, alpha=th_alpha/2, c=color_g_mean, lw=th_width, ls=th_linestyle)
+                plt.axvline(x=self.center_x_e - self.sizeblob_x_e/2, alpha=th_alpha/2, c=color_e_mean, lw=th_width, ls=th_linestyle)
+                plt.axvline(x=self.center_x_e + self.sizeblob_x_e/2, alpha=th_alpha/2, c=color_e_mean, lw=th_width, ls=th_linestyle)
 
             print 'regime: selected'
             #### plot x_g, x_e hists  SELECTED ####
@@ -2248,6 +2459,12 @@ class SSResult:
                 plt.axvline(x=self.center_x_g_select, alpha=th_alpha, c=color_g_mean, lw=th_width, ls=th_linestyle)
                 plt.axvline(x=self.center_x_e_select, alpha=th_alpha, c=color_e_mean, lw=th_width, ls=th_linestyle)
             print 'regime==raw_and_selected'
+            if (self.sizeblob_x_g is not None) and (self.sizeblob_x_e is not None):
+                plt.axvline(x=self.center_x_g - self.sizeblob_x_g/2, alpha=th_alpha/2, c=color_g_mean, lw=th_width, ls=th_linestyle)
+                plt.axvline(x=self.center_x_g + self.sizeblob_x_g/2, alpha=th_alpha/2, c=color_g_mean, lw=th_width, ls=th_linestyle)
+                plt.axvline(x=self.center_x_e - self.sizeblob_x_e/2, alpha=th_alpha/2, c=color_e_mean, lw=th_width, ls=th_linestyle)
+                plt.axvline(x=self.center_x_e + self.sizeblob_x_e/2, alpha=th_alpha/2, c=color_e_mean, lw=th_width, ls=th_linestyle)
+
             #### plot x_g, x_e hists  SELECTED ####
             if (self.hist_x_g_select.hist_xy is not None) and (self.hist_x_e_select.hist_xy is not None):
                 hist_g   = self.hist_x_g_select.hist_xy
@@ -2276,6 +2493,13 @@ class SSResult:
         ###############################################
         ax.set_facecolor(bg_color)
         plt.grid(color=grid_color, alpha= grid_transp)
+
+        [leftlim, rightlim] = limits
+        if leftlim is None:
+            leftlim = np.min([ np.min(hist_g[1]), np.min(hist_e[1]) ])
+        if rightlim is None:
+            rightlim = np.max([ np.max(hist_g[1]), np.max(hist_e[1]) ])
+        plt.xlim(leftlim,rightlim)
 
         if log:
             plt.yscale('log')
@@ -2322,9 +2546,241 @@ class SSResult:
             else:
                 plt.savefig(full_fname,facecolor=fig_face_color, edgecolor=fig_border_color)
 
-        return fig
+        if show:
+            plt.show()
+            return fig
+        else:
+            plt.close()
+            return True
 
-    def plot_hists_unitless(self, regime='raw_data', dark=True, log=True, save=False, figsize=[15,10], savepath='', fname='Hists_unitless', lw=1, fig_transp=False, title_str='', font=None):
+    def plot_hists_y(self, dark=True, log=True, save=False, figsize=[15,10], savepath='', fname='Hists_Y', lw=1, fig_transp=False, title_str='', font=None, show=False, limits=[None,None]):
+        '''
+        function of plot histograms of object is it exists
+        have different regimes:
+        regime = 'raw_data' - plot hists of data with fit(if it is)
+
+        '''
+        ###############################################
+        ### all design here _________________________##
+        ###############################################
+
+        ### STYLE
+        if dark:
+            fname = fname + '_dark'
+            color_g = my_colors_dict['blob_g']
+            color_e = my_colors_dict['blob_e']
+            color_post = my_colors_dict['blob_post']
+            color_fit_g = my_colors_dict['g_state_mark']
+            color_fit_e = my_colors_dict['e_state_mark']
+            color_g_mean = my_colors_dict['g_state_mark']
+            color_e_mean = my_colors_dict['e_state_mark']
+
+            # color_dist =    my_colors_dict['deus_ex_gold']
+            # color_zero = my_colors_dict['meduza_gold']
+                    ### background of image
+            fig_face_color = my_colors_dict['meduza_dark'] #this does not work
+            fig_border_color = 'r'
+            # bg_color = 'k'
+            bg_color = my_colors_dict['meduza_dark']
+            grid_color =  my_colors_dict['meduza_gold']
+            grid_transp = 0.5
+            title_color = my_colors_dict['meduza_gold']
+            legend_color = my_colors_dict['meduza_dark']
+            legend_text_color = my_colors_dict['meduza_gold']
+            legend_alpha = 0.7
+            legend_frame_color = my_colors_dict['meduza_gold']
+
+            th_alpha = 0.7
+            th_color = my_colors_dict['deus_ex_gold']
+            th_width = 2.0*lw
+            th_linestyle = '--'
+
+            AXES_COLOR = my_colors_dict['meduza_gold']
+            import matplotlib as mpl
+            mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
+            mpl.rc('xtick', color=AXES_COLOR)
+            mpl.rc('ytick', color=AXES_COLOR)
+            mpl.rc('grid', color=AXES_COLOR)
+        else:
+            color_g = 'b'
+            color_e = 'r'
+            color_g_mean = 'midnightblue'
+            color_e_mean = 'maroon'
+            color_post = my_colors_dict['blob_post']
+            color_fit_g = my_colors_dict['g_state_mark']
+            color_fit_e = my_colors_dict['e_state_mark']
+
+            frame_color = 'white'
+            bg_color = 'white'
+            grid_color = 'lightgrey'
+            color_dist = 'gold'
+            color_zero = 'k'
+            grid_transp=None
+
+            color_g = 'b'
+            color_e = 'r'
+            transpcy=2.5e-2
+            markersize = None   #None - by default
+                ### centers of clouds
+            # color_g_mean = '#795fd7'
+            color_g_mean = 'midnightblue'
+            color_e_mean = 'maroon'
+            color_dist = 'gold'
+            vector_bw_blobs = 0.7
+                ### vectors from void_point to centers
+            color_g_vector = 'gold'
+            color_e_vector ='gold'
+            vector_state_lw = 0.7
+                ### zero points
+            color_void = 'gold'
+            color_zero = 'k'
+            color_zero_vector = 'k'
+            vector_zero_lw = 0.5
+                ### background of image
+            fig_face_color = 'white' #this does not work
+            fig_border_color = 'r'
+            bg_color = 'white'
+            grid_color =  my_colors_dict['meduza_dark']
+            grid_transp = 0.5
+            title_color = 'k'
+            legend_color = 'white'
+            legend_text_color = 'k'
+            legend_alpha = 0.7
+            legend_frame_color = 'k'
+
+            th_alpha = 0.7
+            th_color = my_colors_dict['deus_ex_gold']
+            th_width = 2.0
+            th_linestyle = '--'
+
+
+            import matplotlib as mpl
+            AXES_COLOR = my_colors_dict['meduza_dark']
+            mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
+            mpl.rc('xtick', color=AXES_COLOR)
+            mpl.rc('ytick', color=AXES_COLOR)
+            mpl.rc('grid', color=AXES_COLOR)
+
+        ### font default
+        if font is None:
+            plt.rc('font', family = 'Verdana')
+
+        ###############################################
+        ### all data plot here ______________________##
+        ###############################################
+        if figsize is None:
+            fig, ax = plt.subplots(1, 1, sharey=True, tight_layout=True, facecolor=fig_face_color, edgecolor = fig_border_color)
+        else:
+            if (type(figsize) != list):
+                print 'figsize must be a lsit'
+                return False
+            else:
+                if len(figsize) != 2:
+                    print 'figsize list must contain to numbers (x and y size)'
+                    return False
+            fig, ax = plt.subplots(1, 1, figsize=(figsize[0],figsize[1]), sharey=True, tight_layout=True, facecolor=fig_face_color, edgecolor = fig_border_color)
+
+
+        maxval = 1 ##this variable we use for define plt.ylim()
+
+        if self.threshold is not None:
+            plt.axvline(x=self.threshold, alpha=th_alpha, c=th_color, lw=th_width, ls=th_linestyle)
+
+        if (self.center_y_g is not None) and (self.center_y_e is not None):
+            plt.axvline(x=self.center_y_g, alpha=th_alpha, c=color_g_mean, lw=th_width, ls=th_linestyle)
+            plt.axvline(x=self.center_y_e, alpha=th_alpha, c=color_e_mean, lw=th_width, ls=th_linestyle)
+        if (self.sizeblob_y_g is not None) and (self.sizeblob_y_e is not None):
+            plt.axvline(x=self.center_y_g - self.sizeblob_y_g/2, alpha=th_alpha/2, c=color_g_mean, lw=th_width, ls=th_linestyle)
+            plt.axvline(x=self.center_y_g + self.sizeblob_y_g/2, alpha=th_alpha/2, c=color_g_mean, lw=th_width, ls=th_linestyle)
+            plt.axvline(x=self.center_y_e - self.sizeblob_y_e/2, alpha=th_alpha/2, c=color_e_mean, lw=th_width, ls=th_linestyle)
+            plt.axvline(x=self.center_y_e + self.sizeblob_y_e/2, alpha=th_alpha/2, c=color_e_mean, lw=th_width, ls=th_linestyle)
+
+        #### plot x_g, x_e hists ####
+        if (self.hist_y_g.hist_xy is not None) and (self.hist_y_e.hist_xy is not None):
+            hist_g   = self.hist_y_g.hist_xy
+            hist_e   = self.hist_y_e.hist_xy
+            maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
+            plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_g, label='Read g-state')
+            plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_e, label='Read e-state')
+
+        #### plot fit hists ####
+        if (self.hist_y_g.gauss_fit is not None) and (self.hist_y_e.gauss_fit is not None):
+            hist_g  = self.hist_y_g.gauss_fit
+            hist_e  = self.hist_y_e.gauss_fit
+            # maxval = np.max([ maxval, np.max(hist_g_fit[0]), np.max(hist_e_fit[0]) ])
+            plt.plot(hist_g[1], hist_g[0], lw=1*lw, color=color_fit_g)
+            plt.plot(hist_e[1], hist_e[0], lw=1*lw, color=color_fit_e)
+
+        ###############################################
+
+
+        ###############################################
+        ### all work with axes here _________________##
+        ###############################################
+        ax.set_facecolor(bg_color)
+        plt.grid(color=grid_color, alpha= grid_transp)
+
+        [leftlim, rightlim] = limits
+        if leftlim is None:
+            leftlim = np.min([ np.min(hist_g[1]), np.min(hist_e[1]) ])
+        if rightlim is None:
+            rightlim = np.max([ np.max(hist_g[1]), np.max(hist_e[1]) ])
+        plt.xlim(leftlim,rightlim)
+
+        if log:
+            plt.yscale('log')
+            plt.ylim(ymin=1, ymax=maxval*1.5)
+        else:
+            plt.yscale('linear')
+            plt.ylim(ymin=1, ymax=maxval*1.1)
+
+        if title_str is '':
+            title_str = self.timestamp
+
+        if self.CONVERT_TOMV:
+            lab_units = '[mV]'
+        else:
+            lab_units = '[V]'
+
+        if font is not None:
+            plt.title(title_str, color=title_color,fontproperties = font)
+            plt.xlabel(lab_units, fontproperties = font)
+            plt.ylabel('Counts',fontproperties = font)
+            leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='upper left', facecolor=legend_color, edgecolor=legend_frame_color,prop=font)
+            for label in ax.get_xticklabels():  #set font to each xtick
+                label.set_fontproperties(font)
+            for label in ax.get_yticklabels():  #set font to each xtick
+                label.set_fontproperties(font)
+        else:
+            plt.title(title_str, color=title_color)
+            plt.xlabel(lab_units)
+            plt.ylabel('Counts')
+            leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='upper left', facecolor=legend_color, edgecolor=legend_frame_color)
+
+        for text in leg.get_texts():        #set color to legend text
+            plt.setp(text, color = legend_text_color)
+
+        if save:
+            if savepath == '':
+                savepath='savings\\'
+            import os
+            if not os.path.exists(savepath):
+                os.makedirs(savepath)
+            full_fname = savepath +'\\'+ fname + '.png'
+            if fig_transp:
+                plt.savefig(full_fname, transparent = True)
+            else:
+                plt.savefig(full_fname,facecolor=fig_face_color, edgecolor=fig_border_color)
+
+        if show:
+            plt.show()
+            return fig
+        else:
+            plt.close()
+            return True
+
+
+    def plot_hists_unitless(self, regime='raw_data', dark=True, log=True, save=False, figsize=[15,10], savepath='', fname='Hists_unitless', lw=1, fig_transp=False, title_str='', font=None, show=False, limits=[None,None]):
         '''
         function of plot histograms of object is it exists
         have different regimes:
@@ -2580,6 +3036,13 @@ class SSResult:
         ax.set_facecolor(bg_color)
         plt.grid(color=grid_color, alpha= grid_transp)
 
+        [leftlim, rightlim] = limits
+        if leftlim is None:
+            leftlim = np.min([ np.min(hist_g[1]), np.min(hist_e[1]) ])
+        if rightlim is None:
+            rightlim = np.max([ np.max(hist_g[1]), np.max(hist_e[1]) ])
+        plt.xlim(leftlim,rightlim)
+
         if log:
             plt.yscale('log')
             plt.ylim(ymin=1, ymax=maxval*1.5)
@@ -2626,7 +3089,12 @@ class SSResult:
             else:
                 plt.savefig(full_fname,facecolor=fig_face_color, edgecolor=fig_border_color)
 
-        return fig
+        if show:
+            plt.show()
+            return fig
+        else:
+            plt.close()
+            return True
 
     def plot_f_vs_threshold(self, xmin=None, xmax=None, ymin=None, ymax=None):
         '''
