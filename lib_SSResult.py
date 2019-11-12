@@ -39,6 +39,73 @@ my_colors_dict = {  'redberry'      :'#970000',
                     'gauss_green'   :'#bacc5f'
 
 }
+# 
+# val =0
+# arg = 0
+# dark_scheme = {     'blob_g'            :my_colors_dict['blob_g'],
+#                     'blob_e'            :my_colors_dict['blob_e'],
+#                     'color_g_mean'      :my_colors_dict['g_state_mark'],
+#                     'color_e_mean'      :my_colors_dict['e_state_mark'],
+#                     'color_dist'        :my_colors_dict['deus_ex_gold'],
+#                     'color_g_vector'    :my_colors_dict['g_state_mark'],
+#                     'color_e_vector'    :my_colors_dict['e_state_mark'],
+#                     'color_void'        :my_colors_dict['deus_ex_gold'],
+#                     'color_zero'        :my_colors_dict['meduza_gold'],
+#                     'color_zero_vector' :my_colors_dict['meduza_gold'],
+#                     'fig_face_color'    :my_colors_dict['meduza_dark'] ,
+#                     'fig_border_color'  :'r',
+#                     'bg_color'          :'k',
+#                     'grid_color'        :my_colors_dict['meduza_gold'],
+#                     'title_color'       :my_colors_dict['meduza_gold'],
+#                     'legend_color'      :my_colors_dict['meduza_dark'],
+#                     'legend_text_color' :my_colors_dict['meduza_gold'],
+#                     'legend_frame_color':my_colors_dict['meduza_gold'],
+#                     'AXES_COLOR'        :my_colors_dict['meduza_gold'],
+#                     'arg'        :val,
+#                     'arg' :val,
+#                     'arg'        :val,
+#                     'arg'        :val,
+#                     'legend_alpha'       :0.7,
+#                     'grid_transp'        :0.5,
+#                     'arg' :val,
+#                     'arg'        :val,
+#                     'arg'        :val,
+#                     'arg' :val,
+#                     'arg'        :val,
+#                     'arg'        :val,
+#
+# }
+#
+# bright_scheme = {   'blob_g'            :'b',
+#                     'blob_e'            :'r',
+#                     'color_g_mean'      :'midnightblue',
+#                     'color_e_mean'      :'maroon',
+#                     'color_dist'        :'gold',
+#                     'color_g_vector'    :'k',
+#                     'color_e_vector'    :'k',
+#                     'color_void'        :'k',
+#                     'color_zero'        :'k',
+#                     'color_zero_vector' :'k',
+#                     'fig_face_color'    :'white',
+#                     'fig_border_color'  :'r',
+#                     'bg_color'          :'k',
+#                     'grid_color'        :'lightgrey',
+#                     'title_color'       :'k',
+#                     'legend_color'      :'gold',
+#                     'legend_text_color' :'k',
+#                     'legend_frame_color':my_colors_dict['meduza_gold'],
+#                     'AXES_COLOR'        :my_colors_dict['meduza_gold'],
+#                     'legend_alpha'       :0.7,
+#                     'grid_transp'        :0.5,
+#                     'arg' :val,
+#                     'arg'        :val,
+#                     'arg'        :val,
+#                     'arg' :val,
+#                     'arg'        :val,
+#                     'arg'        :val,
+# }
+#
+
 
 def set_font(filename='Forza-Book.ttf'):
     '''
@@ -179,40 +246,6 @@ def angle_three_points(x1,y1,x2,y2,x3,y3):
 
     return angle
 
-#old
-# def change_basis_point(x,y, x0, y0, theta):
-#     '''
-#     Change the basis of one point.
-#     takes coordinates of one point and bassis as [x0,y0, theta(grad)]
-#     return coordinatees in a new basis
-#     '''
-#     ### shift the point
-#     x1 = x -x0
-#     y1 = y -y0
-#
-#     #convert theta to radians
-#     theta = np.radians(theta)
-#
-#     ### rotate the vector clockwise
-#     x2 =  x1*np.cos(theta) + y1*np.sin(theta)
-#     y2 = -x1*np.sin(theta) + y1*np.cos(theta)
-#
-#
-#    ### rotate than shift
-#    # #convert theta to radians
-#    # theta = np.radians(theta)
-#    # ### rotate the vector clockwise
-#    # x1 =  x*np.cos(theta) + y*np.sin(theta)
-#    # y1 = -x*np.sin(theta) + y*np.cos(theta)
-#    # ###shift on rotated center
-#    # x00 =  x0*np.cos(theta) + y0*np.sin(theta)
-#    # y00 = -x0*np.sin(theta) + y0*np.cos(theta)
-#    # x2 = x1 -x00
-#    # y2 = y1 -y00
-#    # return [x2,y2]
-#
-#     return [x2,y2]
-
 def change_basis_point(x,y, x0, y0, theta):
     '''
     Change the basis of one point.
@@ -260,7 +293,6 @@ def change_basis_blobs_inf(x0, y0, theta, *args_datapairs):
         result_list.append(data_norm)   #add sequence in a new basis to the list
 
     return result_list
-
 
 def centers_two_blobs(re_g, im_g, re_e, im_e):
     '''
@@ -710,7 +742,11 @@ class SSResult:
     hist_y_e         = None
 
     ###---------------------------###
-    ###### MetaData ######
+
+
+    ######################################################
+    ####  MetaData -----------------##
+    ######  ######
 
     ### Time ###
     datafile = ''
@@ -723,7 +759,12 @@ class SSResult:
     #  'power2':0, 'rudat2':0, 'tpi':0, 'nsigma':0, 'cur':0
     #  }
     dict_param = None
+    ################-----------------##
+    ######################################################
 
+
+    ######################################################
+    ##### CENTERS, THRESHOLD -----------------##
     ### e-g-State definition ###
     threshold = None
     sign_ge = +1     #COULD BE +-1 depends on e>g or g>e
@@ -737,13 +778,27 @@ class SSResult:
     sizeblob_x_e = None
     sizeblob_y_g = None
     sizeblob_y_e = None
+    squizingblob_g = None
+    squizingblob_e = None
+    ### crosses of size of each blolbs
+    ## frame_g_reim = [ax,ay,bx,by,cx,cy,dx,dy]
+    frame_g_xy = None
+    frame_e_xy = None
 
-    # ### for future - need a back rotation #(normalisation)^-1
+    # ### Back_rotated real centers of blobs, extracted from histograms fits
     center_re_g = None
     center_re_e = None
     center_im_g = None
     center_im_e = None
+    ### crosses of size of each blolbs in real raw axes
+    ## frame_g_reim = [ax,ay,bx,by,cx,cy,dx,dy]
+    frame_g_reim = None
+    frame_e_reim = None
 
+    ################-----------------##
+    ######################################################
+
+    ######################################################
     ### dimensionless R-axis (like X in [V])#####-------##
     r_g         = None
     r_e         = None
@@ -759,10 +814,19 @@ class SSResult:
     threshold_r = None
     center_r_g_select = None
     center_r_e_select = None
+
+    ### parameter S = (2/sigma_hist)^2 - 'dimensionless measurement strength'
+    S_eff_e = None
+    S_eff_g = None
+    S_eff_e_selected = None
+    S_eff_g_selected = None
     ################-----------------##
+    ######################################################
 
 
-    ### Results ##########
+    ######################################################
+    ####   Results   ---------------##
+    ###  ##########
     ### Count states ###
     dict_count = {
     'n_left_g'  : 0,    'n_left_e'  : 0,
@@ -785,6 +849,9 @@ class SSResult:
     }
     ### Fidelity dictionary ###
     dict_fidelity = None
+    ################-----------------##
+    ######################################################
+
 
     ############################################################################
     ############################################################################
@@ -996,6 +1063,8 @@ class SSResult:
         self.im_e_pre = np.array([])
 
         ### save angle of rotation and shifting the data
+        ### to go from raw_basis to normal: use change_basis_point(x,y, SHIFT_X, SHIFT_Y, theta)
+        ### to go from normal to raw_basis: use change_basis_point(x,y, -SHIFT_X, -SHIFT_Y, -theta)
         self.THETA = 0
         self.SHIFT_X = 0
         self.SHIFT_Y = 0
@@ -1018,6 +1087,8 @@ class SSResult:
         self.y_g_select  = None
         self.y_e_select  = None
 
+        ######################################################
+        ##### CENTERS, THRESHOLD -----------------##
         ### centers of blobs (in first approximation - np.mean, after taken from gauss fit)
         center_x_g = None
         center_x_e = None
@@ -1027,12 +1098,25 @@ class SSResult:
         sizeblob_x_e = None
         sizeblob_y_g = None
         sizeblob_y_e = None
+        squizingblob_g = None
+        squizingblob_e = None
+        ### crosses of size of each blolbs
+        ## cross_g = [ax,ay,bx,by,cx,cy,dx,dy]
+        cross_g_xy = None
+        cross_e_xy = None
 
         # ### for future - need a back rotation #(normalisation)^-1
         center_re_g = None
         center_re_e = None
         center_im_g = None
         center_im_e = None
+        ### crosses of size of each blolbs in real raw axes
+        ## cross_g = [ax,ay,bx,by,cx,cy,dx,dy]
+        cross_g_reim = None
+        cross_e_reim = None
+
+        ################-----------------##
+        ######################################################
 
         ### dimensionless R-axis (like X in [V])#####-------##
         self.r_g         = None
@@ -1122,7 +1206,9 @@ class SSResult:
             self.dict_param = None
             print 'warning: no parameters is attached to SSResult object'
 
-
+        ##############################################
+        ### ALL THE PROCESSING IS HERE ####
+        ##############################################
         if all_included:
             ### normalize it
             try:
@@ -1143,12 +1229,16 @@ class SSResult:
                 ### make histograms
                     self.make_histograms(nbins = nbins)
                     self.make_histograms_y(nbins = nbins)
+
+                ### make crosses for plot size of real blob on scattering diagram
+                    self.make_blob_crosses()
+
                 ### calculate fidelity
                     self.calculate_fidelity_post()
                 else:
                     print 'smth went wrong'
             except:
-                print '     ___SSResult error during postselection'
+                print '     ___SSResult error during postselection or hists'
 
             ## go from x mV to unitless variable r for S extraction
             try:
@@ -1159,6 +1249,7 @@ class SSResult:
 
 
         print 'Object is created'
+    ############################################################################
 
     ### Process data methods ###
     def take_data(self, data):
@@ -1656,10 +1747,12 @@ class SSResult:
         self.hist_x_e.fit(self.threshold, e_crop_s)
 
         ### set a new center
+
         self.center_x_g = self.hist_x_g.gauss_param[0]
         self.center_x_e = self.hist_x_e.gauss_param[0]
         self.sizeblob_x_g = 2*self.hist_x_g.gauss_param[2]
         self.sizeblob_x_e = 2*self.hist_x_e.gauss_param[2]
+
 
         ### rotate this center to raw data scale
         [self.center_re_g, self.center_im_g] = change_basis_point(self.center_x_g,0, -self.SHIFT_X, -self.SHIFT_Y, -self.THETA)
@@ -1713,11 +1806,87 @@ class SSResult:
         self.sizeblob_y_g = 2*self.hist_y_g.gauss_param[2]
         self.sizeblob_y_e = 2*self.hist_y_e.gauss_param[2]
 
+
         ### make points for rectangle around blobs and rotate its coordinates
         ## example from make_hists()
         # [self.center_re_g, self.center_im_g] = change_basis_point(self.center_x_g,0, -self.SHIFT_X, -self.SHIFT_Y, -self.THETA)
         # [self.center_re_e, self.center_im_e] = change_basis_point(self.center_x_e,0, -self.SHIFT_X, -self.SHIFT_Y, -self.THETA)
 
+
+        return True
+
+    def make_blob_crosses(self):
+        '''
+        Makes a cross shape points around blob in xy_axes and reim_axes for after plot it
+        Also calculate squizingblob_g and squizingblob_e
+        For work it's necessary to have
+        self.center_x_g
+        self.center_y_g
+        self.center_x_e
+        self.center_y_e
+
+        '''
+        def cross_coordinztes_from_center_and_size(center_x, center_y, size_x, size_y):
+            '''
+            Function takes x_y_center of rectangle, and its sizes A and B
+           d _____ c
+            |     |
+            |  +  | B
+            |_____|
+           a   A   b
+            And convert it to coordinates of its corners (a,b,c,d): [x,y]
+            '''
+            ax = center_x - size_x/2
+            ay = center_y
+            bx = center_x + size_x/2
+            by = center_y
+            cx = center_x
+            cy = center_y + size_y/2
+            dx = center_x
+            dy =center_y - size_y/2
+
+            return [ax,ay,bx,by,cx,cy,dx,dy]
+
+        def change_basis_cross(cross_list, shift_x, shift_y, theta):
+            '''
+            Change basis using change_basis_point()
+            takes list of shape [x0,y0, x1,y1, x2,y2... xN,yN]
+            and return it in new basis
+            '''
+            if len(cross_list) % 2 != 0:
+                print 'Error change_basis_cross() - list must consist even number of elements'
+                return np.zeros_like(cross_list)
+
+            result_list_reim = []
+            for i in np.arange(0, len(cross_list), 2):
+                x = cross_list[i]
+                y = cross_list[i+1]
+                [re,im] = change_basis_point(x,y, shift_x, shift_y, theta)
+                result_list_reim.append(re)
+                result_list_reim.append(im)
+
+            return result_list_reim
+
+        ##[ax,ay,bx,by,cx,cy,dx,dy]
+        self.cross_g_xy = cross_coordinztes_from_center_and_size(self.center_x_g, self.center_y_g, self.sizeblob_x_g, self.sizeblob_y_g)
+        self.cross_e_xy = cross_coordinztes_from_center_and_size(self.center_x_e, self.center_y_e, self.sizeblob_x_e, self.sizeblob_y_e)
+
+        try:
+            ### set cross to raw basis Re-Im
+            ##[aRe,aIm,bRe,bIm,cRe,cIm,dRe,dIm]
+            self.cross_g_reim = change_basis_cross(self.cross_g_xy, -self.SHIFT_X, -self.SHIFT_Y, -self.THETA)
+            self.cross_e_reim = change_basis_cross(self.cross_e_xy, -self.SHIFT_X, -self.SHIFT_Y, -self.THETA)
+        except:
+            print 'Error of setting self.cross_g_reim. Probably SHIFT or THETA didnt set'
+
+        print 'crosses around blobs calculated...'
+
+        try:
+            ### calculate squizingblob
+            self.squizingblob_g = self.sizeblob_y_g / self.sizeblob_x_g
+            self.squizingblob_e = self.sizeblob_y_e / self.sizeblob_x_e
+        except:
+            print 'Error, squizingblob_g(e) was not calculated'
 
         return True
 
@@ -1765,11 +1934,25 @@ class SSResult:
             # ### reset a new center
             # self.center_x_e_select = self.hist_x_e_select.gauss_param[0]
 
+        ### Record dimensionless measurement strength
+        sig_e = self.hist_r_e.gauss_param[1]
+        sig_g = self.hist_r_g.gauss_param[1]
+        S_e = (2/sig_e)**2
+        S_g = (2/sig_g)**2
+        self.S_eff_e = S_e
+        self.S_eff_g = S_g
+
+        ### And for data after postselection
+        sig_e_sel = self.hist_r_e_select.gauss_param[1]
+        sig_g_sel = self.hist_r_g_select.gauss_param[1]
+        S_e_sel = (2/sig_e_sel)**2
+        S_g_sel = (2/sig_g_sel)**2
+        self.S_eff_e_selected = S_e_sel
+        self.S_eff_g_selected = S_g_sel
 
         ### making hists and fit for x_g_pre & x_e_pre ###
         print 'unitless histograms made'
         return True
-
 
     def calculate_fidelity_post(self):
         '''
@@ -1954,7 +2137,7 @@ class SSResult:
 
         ### setting centers
         if centers is not None:
-            [c_re_g, c_im_g, c_re_e, c_im_e] = centers
+            [c_re_g, c_im_g, c_re_e, c_im_e] = centers  ## given manually
         else:
             if not norm:
                 if (self.center_re_g is None) or (self.center_re_e is None) or (self.center_im_g is None) or (self.center_im_e is None):
@@ -2012,9 +2195,8 @@ class SSResult:
             legend_alpha = 0.7
             legend_frame_color = my_colors_dict['meduza_gold']
 
-
             AXES_COLOR = my_colors_dict['meduza_gold']
-            import matplotlib as mpl
+                        import matplotlib as mpl
             mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
             mpl.rc('xtick', color=AXES_COLOR)
             mpl.rc('ytick', color=AXES_COLOR)
@@ -2103,6 +2285,9 @@ class SSResult:
 
         str_g_place = 'Amp:'+ my_stround(amp_g,5,withminus=True) + '; Phase:'+ my_stround(ph_g,4,withminus=True)+ 'deg'
         str_e_place = 'Amp:'+ my_stround(amp_e,5,withminus=True) + '; Phase:'+ my_stround(ph_e,4,withminus=True)+ 'deg'
+        if (self.squizingblob_g is not None) and (self.squizingblob_e is not None):
+            str_g_place = str_g_place + '; sqz:' + my_stround(self.squizingblob_g,4,withminus=False)
+            str_e_place = str_e_place + '; sqz:' + my_stround(self.squizingblob_e,4,withminus=False)
 
         amp_relation = my_stround(amp_e/amp_g,4,withminus=True)
         str_blob_place = str_blob_place + '; Ratio amps: '+ amp_relation
@@ -2181,22 +2366,40 @@ class SSResult:
             plt.plot([void_re,c_re_e], [void_im, c_im_e], color=color_e_vector, linewidth=vector_state_lw)        #plot line from VOID to |e> blob
             plt.plot([0, void_re], [0, void_im], color=color_zero_vector, linewidth=vector_zero_lw)      #plot line form [0,0] to VOID
 
-        plt.plot([ c_re_g ],[ c_im_g ], 'X', markersize=crosssize, color=color_g_mean, label='g-state: '+str_g_place)  #this two needs only for legend color
-        plt.plot([ c_re_e ],[ c_im_e ], 'X', markersize=crosssize, color=color_e_mean, label='e-state: '+str_e_place)
+        plot_centers = False
+        plt.plot([ c_re_g ],[ c_im_g ], 'X', markersize=crosssize, color=color_g_mean, label='g-state: '+str_g_place, visible=plot_centers)  #this two needs only for legend color
+        plt.plot([ c_re_e ],[ c_im_e ], 'X', markersize=crosssize, color=color_e_mean, label='e-state: '+str_e_place, visible=plot_centers)
 
-        # ### plot x-size of blobs
-        # def rectangle_from_center_and_length(c_x,c_y,l_x,l_y):
-        #
-        #     return [x1,y1, x2,y2, x3,y3, x4,y4]
-        if norm:
-            if (self.sizeblob_x_g is not None):
-                plt.plot([ self.center_x_g - self.sizeblob_x_g/2, self.center_x_g + self.sizeblob_x_g/2 ], [0,0], color='b', lw=2)
-            if (self.sizeblob_x_e is not None):
-                plt.plot([ self.center_x_e - self.sizeblob_x_e/2, self.center_x_e + self.sizeblob_x_e/2 ], [0,0], color='r', lw=2)
-            if (self.sizeblob_y_g is not None):
-                plt.plot([self.center_x_g,self.center_x_g], [ self.center_y_g - self.sizeblob_y_g/2, self.center_y_g + self.sizeblob_y_g/2 ],  color='b', lw=2)
-            if (self.sizeblob_y_e is not None):
-                plt.plot([self.center_x_e,self.center_x_e], [ self.center_y_e - self.sizeblob_y_e/2, self.center_y_e + self.sizeblob_y_e/2 ],  color='r', lw=2)
+        #### PLOT CROSSES AROUND EACH BLOB TO SHOW REAL SIZE ###################
+        ###remake it with one pair of plt.plot !V !V
+        plot_crosses = True
+        if plot_crosses:
+            if norm:
+                ### g blob in XY axes
+                if self.cross_g_xy is not None:
+                    [ax,ay,bx,by,cx,cy,dx,dy] = self.cross_g_xy
+                    plt.plot([ax,bx],[ay,by], color='b', lw=2)
+                    plt.plot([cx,dx],[cy,dy], color='b', lw=2)
+                ### e blolb in XY axes
+                if self.cross_e_xy is not None:
+                    [ax,ay,bx,by,cx,cy,dx,dy] = self.cross_e_xy
+                    plt.plot([ax,bx],[ay,by], color='r', lw=2)
+                    plt.plot([cx,dx],[cy,dy], color='r', lw=2)
+
+            else: ## if not nramalized
+
+                ### g blob in ReIm axes
+                if self.cross_g_reim is not None:
+                    [ax,ay,bx,by,cx,cy,dx,dy] = self.cross_g_reim
+                    plt.plot([ax,bx],[ay,by], color='b', lw=2)
+                    plt.plot([cx,dx],[cy,dy], color='b', lw=2)
+                ### e blolb in ReIm axes
+                if self.cross_e_reim is not None:
+                    [ax,ay,bx,by,cx,cy,dx,dy] = self.cross_e_reim
+                    plt.plot([ax,bx],[ay,by], color='r', lw=2)
+                    plt.plot([cx,dx],[cy,dy], color='r', lw=2)
+
+        ########################################################################
 
         if zero_on_plot:
             zero_label = 'Void zero: Re:'+ my_stround(void_re,5,withminus=True)+ '; Im:'+ my_stround(void_im,5,withminus=True) + '; 2*alpha='+ my_stround(angle_between_blobs,3,withminus=True)+ u"\u00b0"
@@ -2364,6 +2567,7 @@ class SSResult:
             fig, ax = plt.subplots(1, 1, figsize=(figsize[0],figsize[1]), sharey=True, tight_layout=True, facecolor=fig_face_color, edgecolor = fig_border_color)
 
 
+
         maxval = 1 ##this variable we use for define plt.ylim()
 
         if self.threshold is not None:
@@ -2470,8 +2674,8 @@ class SSResult:
                 hist_g   = self.hist_x_g_select.hist_xy
                 hist_e   = self.hist_x_e_select.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
-                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_post, label='Selected g-state')
-                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_post, label='Selected e-state')
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color='b', label='Selected g-state')
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color='r', label='Selected e-state')
 
             #### plot x_g, x_e hists ####
             if (self.hist_x_g.hist_xy is not None) and (self.hist_x_e.hist_xy is not None):
@@ -2780,7 +2984,7 @@ class SSResult:
             return True
 
 
-    def plot_hists_unitless(self, regime='raw_data', dark=True, log=True, save=False, figsize=[15,10], savepath='', fname='Hists_unitless', lw=1, fig_transp=False, title_str='', font=None, show=False, limits=[None,None]):
+    def plot_hists_unitless(self, regime='raw_and_selected', dark=True, log=True, save=False, figsize=[15,10], savepath='', fname='Hists_unitless', lw=1, fig_transp=False, title_str='', font=None, show=False, limits=[None,None]):
         '''
         function of plot histograms of object is it exists
         have different regimes:
@@ -2919,14 +3123,17 @@ class SSResult:
         str_params = ''
         if self.dict_param is not None:
             str_params = 'Rdt:'+ my_stround( self.dict_param['rudat'],4 )+'dB; t_read:'+my_stround( 1e9*self.dict_param['t_read'],3 )+'ns'
-        sig_e = self.hist_r_e.gauss_param[1]
-        sig_g = self.hist_r_g.gauss_param[1]
-        S_e = (2/sig_e)**2
-        S_g = (2/sig_g)**2
-        str_snr = 'Sigma_e' + '=' + str( round(sig_e,2) ) + '; Se='+ str( round(S_e,2) ) + '\nSigma_g' + '=' + str( round(sig_g,2) ) + '; Sg='+ str( round(S_g,2) )
-        # ssssigma = u"\u03c3"
-        plt.plot([],[], label = str_params, visible=False)
-        plt.plot([],[], label = str_snr, visible=False)
+            plt.plot([],[], label = str_params, visible=False)
+
+        S_e = self.S_eff_e
+        S_g = self.S_eff_g
+        str_S_e = '; Se='+ str( round(S_e,2) )
+        str_S_g = '; Sg='+ str( round(S_g,2) )
+
+        S_e_selected = self.S_eff_e_selected
+        S_g_selected = self.S_eff_g_selected
+        str_S_e_selected = '; Se_sel='+ str( round(S_e_selected,2) )
+        str_S_g_selected = '; Sg_sel='+ str( round(S_g_selected,2) )
 
         if regime == 'raw_data':
             print 'regime: raw_data'
@@ -2938,8 +3145,8 @@ class SSResult:
                 hist_g   = self.hist_r_g.hist_xy
                 hist_e   = self.hist_r_e.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
-                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_g, label='Read g-state')
-                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_e, label='Read e-state')
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_g, label='Read g-state'+str_S_g)
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_e, label='Read e-state'+str_S_e)
 
             #### plot fit hists ####
             if (self.hist_r_g.gauss_fit is not None) and (self.hist_r_e.gauss_fit is not None):
@@ -2967,8 +3174,8 @@ class SSResult:
                 hist_g   = self.hist_r_g.hist_xy
                 hist_e   = self.hist_r_e.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
-                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_g, label='Read g-state')
-                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_e, label='Read e-state')
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_g, label='Read g-state'+str_S_g)
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_e, label='Read e-state'+str_S_e)
 
             #### plot fit hists ####
             if (self.hist_r_g.gauss_fit is not None) and (self.hist_r_e.gauss_fit is not None):
@@ -2990,8 +3197,8 @@ class SSResult:
                 hist_g   = self.hist_r_g_select.hist_xy
                 hist_e   = self.hist_r_e_select.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
-                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_g, label='Selected g-state')
-                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_e, label='Selected e-state')
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_g, label='Selected g-state'+str_S_g_selected)
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_e, label='Selected e-state'+str_S_e_selected)
 
             #### plot fit hists ####
             if (self.hist_r_g_select.gauss_fit is not None) and (self.hist_r_e_select.gauss_fit is not None):
@@ -3012,17 +3219,32 @@ class SSResult:
                 hist_g   = self.hist_r_g_select.hist_xy
                 hist_e   = self.hist_r_e_select.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
-                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_post, label='Selected g-state')
-                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_post, label='Selected e-state')
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color='b', label='Selected g-state'+str_S_g_selected)
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color='r', label='Selected e-state'+str_S_e_selected)
 
             #### plot r_g, r_e hists ####
             if (self.hist_r_g.hist_xy is not None) and (self.hist_r_e.hist_xy is not None):
                 hist_g   = self.hist_r_g.hist_xy
                 hist_e   = self.hist_r_e.hist_xy
                 maxval = np.max([ maxval, np.max(hist_g[0]), np.max(hist_e[0]) ])
-                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_g, label='Read g-state')
-                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_e, label='Read e-state')
+                plt.plot(hist_g[1], hist_g[0], drawstyle='steps', lw=1*lw, color=color_g, label='Read g-state'+str_S_g)
+                plt.plot(hist_e[1], hist_e[0], drawstyle='steps', lw=1*lw, color=color_e, label='Read e-state'+str_S_e)
 
+            #### plot fit hists ####
+            ## selected
+            if (self.hist_r_g_select.gauss_fit is not None) and (self.hist_r_e_select.gauss_fit is not None):
+                hist_g  = self.hist_r_g_select.gauss_fit
+                hist_e  = self.hist_r_e_select.gauss_fit
+                # maxval = np.max([ maxval, np.max(hist_g_fit[0]), np.max(hist_e_fit[0]) ])
+                plt.plot(hist_g[1], hist_g[0], lw=1*lw, color='b')
+                plt.plot(hist_e[1], hist_e[0], lw=1*lw, color='r')
+            ### raw
+            if (self.hist_r_g.gauss_fit is not None) and (self.hist_r_e.gauss_fit is not None):
+                hist_g  = self.hist_r_g.gauss_fit
+                hist_e  = self.hist_r_e.gauss_fit
+                # maxval = np.max([ maxval, np.max(hist_g_fit[0]), np.max(hist_e_fit[0]) ])
+                plt.plot(hist_g[1], hist_g[0], lw=1*lw, color=color_fit_g)
+                plt.plot(hist_e[1], hist_e[0], lw=1*lw, color=color_fit_e)
 
         else:
             print 'plot_hist: wrong value for regime!'
