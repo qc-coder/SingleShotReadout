@@ -39,72 +39,73 @@ my_colors_dict = {  'redberry'      :'#970000',
                     'gauss_green'   :'#bacc5f'
 
 }
-# 
-# val =0
-# arg = 0
-# dark_scheme = {     'blob_g'            :my_colors_dict['blob_g'],
-#                     'blob_e'            :my_colors_dict['blob_e'],
-#                     'color_g_mean'      :my_colors_dict['g_state_mark'],
-#                     'color_e_mean'      :my_colors_dict['e_state_mark'],
-#                     'color_dist'        :my_colors_dict['deus_ex_gold'],
-#                     'color_g_vector'    :my_colors_dict['g_state_mark'],
-#                     'color_e_vector'    :my_colors_dict['e_state_mark'],
-#                     'color_void'        :my_colors_dict['deus_ex_gold'],
-#                     'color_zero'        :my_colors_dict['meduza_gold'],
-#                     'color_zero_vector' :my_colors_dict['meduza_gold'],
-#                     'fig_face_color'    :my_colors_dict['meduza_dark'] ,
-#                     'fig_border_color'  :'r',
-#                     'bg_color'          :'k',
-#                     'grid_color'        :my_colors_dict['meduza_gold'],
-#                     'title_color'       :my_colors_dict['meduza_gold'],
-#                     'legend_color'      :my_colors_dict['meduza_dark'],
-#                     'legend_text_color' :my_colors_dict['meduza_gold'],
-#                     'legend_frame_color':my_colors_dict['meduza_gold'],
-#                     'AXES_COLOR'        :my_colors_dict['meduza_gold'],
-#                     'arg'        :val,
-#                     'arg' :val,
-#                     'arg'        :val,
-#                     'arg'        :val,
-#                     'legend_alpha'       :0.7,
-#                     'grid_transp'        :0.5,
-#                     'arg' :val,
-#                     'arg'        :val,
-#                     'arg'        :val,
-#                     'arg' :val,
-#                     'arg'        :val,
-#                     'arg'        :val,
-#
-# }
-#
-# bright_scheme = {   'blob_g'            :'b',
-#                     'blob_e'            :'r',
-#                     'color_g_mean'      :'midnightblue',
-#                     'color_e_mean'      :'maroon',
-#                     'color_dist'        :'gold',
-#                     'color_g_vector'    :'k',
-#                     'color_e_vector'    :'k',
-#                     'color_void'        :'k',
-#                     'color_zero'        :'k',
-#                     'color_zero_vector' :'k',
-#                     'fig_face_color'    :'white',
-#                     'fig_border_color'  :'r',
-#                     'bg_color'          :'k',
-#                     'grid_color'        :'lightgrey',
-#                     'title_color'       :'k',
-#                     'legend_color'      :'gold',
-#                     'legend_text_color' :'k',
-#                     'legend_frame_color':my_colors_dict['meduza_gold'],
-#                     'AXES_COLOR'        :my_colors_dict['meduza_gold'],
-#                     'legend_alpha'       :0.7,
-#                     'grid_transp'        :0.5,
-#                     'arg' :val,
-#                     'arg'        :val,
-#                     'arg'        :val,
-#                     'arg' :val,
-#                     'arg'        :val,
-#                     'arg'        :val,
-# }
-#
+
+dark_scheme = {     'blob_g'            :my_colors_dict['blob_g'],
+                    'blob_e'            :my_colors_dict['blob_e'],
+                    'blob_prepulse'     :'g',
+                    'color_g_mean'      :my_colors_dict['g_state_mark'],
+                    'color_e_mean'      :my_colors_dict['e_state_mark'],
+                    'color_g_cross'     :my_colors_dict['deus_ex_gold'],
+                    'color_e_cross'     :my_colors_dict['deus_ex_gold'],
+                    'color_dist'        :my_colors_dict['deus_ex_gold'],
+                    'color_g_vector'    :my_colors_dict['g_state_mark'],
+                    'color_e_vector'    :my_colors_dict['e_state_mark'],
+                    'color_void'        :my_colors_dict['deus_ex_gold'],
+                    'color_zero'        :my_colors_dict['meduza_gold'],
+                    'color_zero_vector' :my_colors_dict['meduza_gold'],
+                    'fig_face_color'    :my_colors_dict['meduza_dark'] ,
+                    'fig_border_color'  :'r',
+                    'bg_color'          :'k',
+                    'grid_color'        :my_colors_dict['meduza_gold'],
+                    'title_color'       :my_colors_dict['meduza_gold'],
+                    'legend_color'      :my_colors_dict['meduza_dark'],
+                    'legend_text_color' :my_colors_dict['meduza_gold'],
+                    'legend_frame_color':my_colors_dict['meduza_gold'],
+                    'AXES_COLOR'        :my_colors_dict['meduza_gold'],
+                    'legend_alpha'       :0.7,
+                    'grid_transp'        :0.5,
+                    'lw_cross'           :0.8,
+                    'vector_bw_blobs'    :1,
+                    'vector_state_lw'    :1,
+                    'vector_zero_lw'     :1,
+                    'point_scatter_size' :1,
+                    'onplot_mark_size'   :10
+
+
+}
+
+bright_scheme = {   'blob_g'            :my_colors_dict['blob_g'],
+                    'blob_e'            :my_colors_dict['blob_e'],
+                    'blob_prepulse'     :'g',
+                    'color_g_mean'      :my_colors_dict['g_state_mark'],
+                    'color_e_mean'      :my_colors_dict['e_state_mark'],
+                    'color_g_cross'     :'k',
+                    'color_e_cross'     :'k',
+                    'color_dist'        :'k',
+                    'color_g_vector'    :'b',
+                    'color_e_vector'    :'r',
+                    'color_void'        :'lightgrey',
+                    'color_zero'        :'lightgrey',
+                    'color_zero_vector' :'lightgrey',
+                    'fig_face_color'    :'white' ,
+                    'fig_border_color'  :'r',
+                    'bg_color'          :'white',
+                    'grid_color'        :'lightgrey',
+                    'title_color'       :'k',
+                    'legend_color'      :'lightgrey',
+                    'legend_text_color' :'k',
+                    'legend_frame_color':'lightgrey',
+                    'AXES_COLOR'        :'k',
+                    'legend_alpha'       :0.8,
+                    'grid_transp'        :0.7,
+                    'lw_cross'           :1,
+                    'vector_bw_blobs'    :1,
+                    'vector_state_lw'    :1,
+                    'vector_zero_lw'     :1
+
+}
+
+
 
 
 def set_font(filename='Forza-Book.ttf'):
@@ -2090,7 +2091,354 @@ class SSResult:
         return True
 
     ### Drawing methods ###
-    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=[15,10], markersize=0.2, crosssize=10, lw=1, transpcy=100e-2,  fname='Two_blob', savepath='', fig_transp = True, show=False, limits=[None,None,None,None], crop=True, dark=True, title_str=None, font=None, zero_on_plot=False, pre_read=False):
+    # def plot_scatter_two_blob_old_color_breaken(self, norm=False, centers=None, save=False, figsize=[15,10], markersize=0.2, crosssize=10, lw=1, transpcy=100e-2,  fname='Two_blob', savepath='', fig_transp = True, show=True, limits=[None,None,None,None], crop=True, dark=True, title_str=None, font=None, zero_on_plot=False, pre_read=False):
+    #     '''
+    #     Plots diagramm of scattering for two blobs on the i-q plane
+    #     returns limits of axis (it is used for histograms)
+    #     if want to set the limits dont forget to make 'crop=False'
+    #     figsize - in inches!
+    #     '''
+    #     if norm:
+    #         if (self.x_g is None) or (self.x_e is None):
+    #             self.make_norm_data_from_raw()    ### do renormalization
+    #
+    #         void_re = self.void_x
+    #         void_im = self.void_y
+    #         re_g     = self.x_g
+    #         im_g     = self.y_g
+    #         re_e     = self.x_e
+    #         im_e     = self.y_e
+    #         re_g_p = self.x_g_pre
+    #         im_g_p = self.y_g_pre
+    #         re_e_p = self.x_e_pre
+    #         im_e_p = self.y_e_pre
+    #     else:
+    #         if (self.re_g is None) or (self.im_g is None) or (self.re_e is None) or (self.im_e is None):
+    #             print 'It is no raw data. \n loading...'
+    #             success_load = self.load_data(self.datafile)
+    #             if not success_load:
+    #                 print 'load was not successful'
+    #                 return None
+    #
+    #         void_re = self.void_re
+    #         void_im = self.void_im
+    #         re_g     = self.re_g
+    #         im_g     = self.im_g
+    #         re_e     = self.re_e
+    #         im_e     = self.im_e
+    #         re_g_p = self.re_g_pre
+    #         im_g_p = self.im_g_pre
+    #         re_e_p = self.re_e_pre
+    #         im_e_p = self.im_e_pre
+    #         if pre_read:
+    #             re_g_pre = self.re_g_pre
+    #             im_g_pre = self.im_g_pre
+    #             re_e_pre = self.re_e_pre
+    #             im_e_pre = self.im_e_pre
+    #
+    #     ### setting centers
+    #     if centers is not None:
+    #         [c_re_g, c_im_g, c_re_e, c_im_e] = centers  ## given manually
+    #     else:
+    #         if not norm:
+    #             if (self.center_re_g is None) or (self.center_re_e is None) or (self.center_im_g is None) or (self.center_im_e is None):
+    #                 [ self.center_re_g, self.center_im_g, self.center_re_e, self.center_im_e] = centers_two_blobs(re_g, im_g, re_e, im_e)
+    #             [c_re_g, c_im_g, c_re_e, c_im_e ] = [ self.center_re_g, self.center_im_g, self.center_re_e, self.center_im_e ]
+    #         else:
+    #             if (self.center_x_g is not None) and (self.center_x_e is not None):
+    #                 [c_re_g, c_im_g, c_re_e, c_im_e ] = [ self.center_x_g, 0, self.center_x_e, 0  ]
+    #             else:
+    #                 print 'Error: data is not normalised'
+    #
+    #
+    #         ### SET CUSTOM FONT ###
+    #     #1
+    #     # plt.rc('font', family = 'DejaVuSans')
+    #     ###-----------------###
+    #     #2
+    #     if font is None:
+    #         plt.rc('font', family = 'Verdana')
+    #     # fontproperties = font
+    #     ### ##############T ###
+    #
+    #     #### custom colors #3
+    #     # vector_bw_blobs = 0.7*lw
+    #     # vector_state_lw = 0.7*lw
+    #     # vector_zero_lw = 0.5*lw
+    #     markersize = markersize
+    #     crosssize = crosssize
+    #
+    #     if dark:
+    #         color_g = my_colors_dict['blob_g']
+    #         color_e = my_colors_dict['blob_e']
+    #           #None - by default
+    #             ### centers of clouds
+    #         # color_g_mean = '#795fd7'
+    #         color_g_mean = my_colors_dict['g_state_mark']
+    #         color_e_mean = my_colors_dict['e_state_mark']
+    #         color_dist =    my_colors_dict['deus_ex_gold']
+    #             ### vectors from void_point to centers
+    #         color_g_vector = my_colors_dict['deus_ex_gold']
+    #         color_e_vector = my_colors_dict['deus_ex_gold']
+    #             ### zero points
+    #         color_void = my_colors_dict['deus_ex_gold']
+    #         color_zero = my_colors_dict['meduza_gold']
+    #         color_zero_vector = my_colors_dict['meduza_gold']
+    #             ### background of image
+    #         fig_face_color = my_colors_dict['meduza_dark'] #this does not work
+    #         fig_border_color = 'r'
+    #         bg_color = 'k'
+    #         grid_color =  my_colors_dict['meduza_gold']
+    #         grid_transp = 0.5
+    #         title_color = my_colors_dict['meduza_gold']
+    #         legend_color = my_colors_dict['meduza_dark']
+    #         legend_text_color = my_colors_dict['meduza_gold']
+    #         legend_alpha = 0.7
+    #         legend_frame_color = my_colors_dict['meduza_gold']
+    #
+    #         AXES_COLOR = my_colors_dict['meduza_gold']
+    #         import matplotlib as mpl
+    #         mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
+    #         mpl.rc('xtick', color=AXES_COLOR)
+    #         mpl.rc('ytick', color=AXES_COLOR)
+    #         mpl.rc('grid', color=AXES_COLOR)
+    #     else:
+    #         color_g = 'b'
+    #         color_e = 'r'
+    #         color_g_mean = 'midnightblue'
+    #         color_e_mean = 'maroon'
+    #         frame_color = 'white'
+    #         bg_color = 'white'
+    #         grid_color = 'lightgrey'
+    #         color_dist = 'gold'
+    #         color_zero = 'k'
+    #         grid_transp=None
+    #         color_g = 'b'
+    #         color_e = 'r'
+    #             ### centers of clouds
+    #         # color_g_mean = '#795fd7'
+    #         color_g_mean = 'midnightblue'
+    #         color_e_mean = 'maroon'
+    #         color_dist = 'gold'
+    #             ### vectors from void_point to centers
+    #         color_g_vector = 'gold'
+    #         color_e_vector ='gold'
+    #             ### zero points
+    #         color_void = 'gold'
+    #         color_zero = 'k'
+    #         color_zero_vector = 'k'
+    #             ### background of image
+    #         fig_face_color = 'white' #this does not work
+    #         fig_border_color = 'r'
+    #         bg_color = 'white'
+    #         grid_color =  my_colors_dict['meduza_dark']
+    #         grid_transp = 0.5
+    #         title_color = 'k'
+    #         legend_color = 'white'
+    #         legend_text_color = 'k'
+    #         legend_alpha = 0.7
+    #         legend_frame_color = my_colors_dict['meduza_gold']
+    #
+    #         import matplotlib as mpl
+    #         AXES_COLOR = my_colors_dict['meduza_dark']
+    #         mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
+    #         mpl.rc('xtick', color=AXES_COLOR)
+    #         mpl.rc('ytick', color=AXES_COLOR)
+    #         mpl.rc('grid', color=AXES_COLOR)
+    #
+    #     if save:
+    #         if savepath == '':
+    #             savepath='savings\\'
+    #
+    #     str_fidelity = ''
+    #     str_params   = ''
+    #     if self.dict_fidelity is not None:
+    #         str_fidelity = 'F_post:'+my_stround(  100*self.dict_fidelity['F_post'],4 )+'% F:'+my_stround(  100*self.dict_fidelity['F'],4 )+'% F_gaus:'+my_stround(  100*self.dict_fidelity['F_gaus'],4 )+'%'
+    #     if self.dict_param is not None:
+    #         str_params = 'Rdt:'+ my_stround( self.dict_param['rudat'],4 )+'dB; t_read:'+my_stround( 1e9*self.dict_param['t_read'],3 )+'ns'
+    #
+    #
+    #     ### find angle 2*alpha (angle between two blolbs according to void-state)
+    #     angle_between_blobs = angle_three_points(c_re_g,c_im_g, void_re,void_im, c_re_e,c_im_e)
+    #
+    #     ## SETTING BORDERS ### (now it is outside)
+    #     if not crop:
+    #         [leftlim, rightlim, toplim, bottomlim ]= limits
+    #         if leftlim is None:
+    #             leftlim =  np.min([  0,   np.min([ re_e, re_g ])  ])
+    #         if rightlim is None:
+    #             rightlim = np.max([  0,   np.max([ re_e, re_g ])  ])
+    #         if toplim is None:
+    #             toplim =   np.max([  0,   np.max([ im_e, im_g ])  ])
+    #         if bottomlim is None:
+    #             bottomlim =np.min([  0,   np.min([ im_e, im_g ])  ])
+    #     else:
+    #         [leftlim, rightlim, toplim, bottomlim ] = crop_fluctuations(re_g, im_g ,re_e, im_e, void_re=self.void_re, void_im=self.void_im )
+    #
+    #     ### calculation of angle and distance between blolb centers
+    #     [dist, theta] = complex_num_relationships(c_re_g,c_im_g,c_re_e,c_im_e)
+    #     str_blob_place = 'Distance:'+ my_stround(dist,4) + '; Theta' +":" + my_stround(theta,2,withminus=True) + 'deg'
+    #     print str_blob_place
+    #
+    #     ### vectors of each states from void signal
+    #     [amp_g, ph_g] = complex_num_relationships(void_re, void_im, c_re_g,c_im_g)
+    #     [amp_e, ph_e] = complex_num_relationships(void_re, void_im, c_re_e,c_im_e)
+    #
+    #     str_g_place = 'Amp:'+ my_stround(amp_g,5,withminus=True) + '; Phase:'+ my_stround(ph_g,4,withminus=True)+ 'deg'
+    #     str_e_place = 'Amp:'+ my_stround(amp_e,5,withminus=True) + '; Phase:'+ my_stround(ph_e,4,withminus=True)+ 'deg'
+    #     if (self.squizingblob_g is not None) and (self.squizingblob_e is not None):
+    #         str_g_place = str_g_place + '; sqz:' + my_stround(self.squizingblob_g,4,withminus=False)
+    #         str_e_place = str_e_place + '; sqz:' + my_stround(self.squizingblob_e,4,withminus=False)
+    #
+    #     amp_relation = my_stround(amp_e/amp_g,4,withminus=True)
+    #     str_blob_place = str_blob_place + '; Ratio amps: '+ amp_relation
+    #     print str_g_place
+    #     print str_e_place
+    #     print 'Ratio amps: '+ amp_relation
+    #
+    #     if dark:
+    #         fname = fname + '_dark'
+    #
+    #     if figsize is None:
+    #         fig = plt.figure(fname, facecolor=fig_face_color, edgecolor = fig_border_color)
+    #     else:
+    #         if (type(figsize) != list):
+    #             print 'figsize must be a lsit'
+    #             return False
+    #         else:
+    #             if len(figsize) != 2:
+    #                 print 'figsize list must contain to numbers (x and y size)'
+    #                 return False
+    #         fig = plt.figure(fname, facecolor=fig_face_color, edgecolor = fig_border_color, figsize=(figsize[0],figsize[1]))
+    #
+    #
+    #     ax = fig.add_subplot(1, 1, 1) # nrows, ncols, index
+    #     ax.set_facecolor(bg_color)
+    #
+    #     if font is not None:
+    #         plt.axis('equal',fontproperties = font)   #same step X and Y        #square axis automatic
+    #     else:
+    #         plt.axis('equal')
+    #
+    #     plt.xlim( left = leftlim, right=rightlim )
+    #     plt.ylim( top =  toplim, bottom=bottomlim )
+    #
+    #     plt.grid(color=grid_color, alpha= grid_transp)
+    #
+    #     if title_str is None or title_str=='':
+    #         if font is not None:
+    #             plt.title(self.timestamp, color=title_color,fontproperties = font)
+    #         else:
+    #             plt.title(self.timestamp, color=title_color)
+    #     else:
+    #         if font is not None:
+    #             plt.title(title_str, color=title_color,fontproperties = font)
+    #         else:
+    #             plt.title(title_str, color=title_color)
+    #
+    #     if self.CONVERT_TOMV:
+    #         lab_units = '[mV]'
+    #     else:
+    #         lab_units = '[V]'
+    #
+    #     if font is not None:
+    #         plt.xlabel('Re '+lab_units, fontproperties = font)
+    #         plt.ylabel('Im '+lab_units, fontproperties = font)
+    #     else:
+    #         plt.xlabel('Re '+lab_units)
+    #         plt.ylabel('Im '+lab_units)
+    #
+    #     plt.scatter(re_e, im_e, color=color_e, alpha=transpcy, s=markersize)
+    #     plt.scatter(re_g, im_g, color=color_g, alpha=transpcy, s=markersize)
+    #
+    #     if pre_read:
+    #         if not norm:
+    #             plt.scatter(re_g_pre, im_g_pre, color='g', alpha=transpcy, s=markersize)
+    #
+    #     ### fake plot just for string in legend
+    #     plt.plot([],[], label = str_params, visible=False)
+    #     plt.plot([],[], label = str_fidelity, visible=False)
+    #
+    #
+    #     ### real plots
+    #     plt.plot([c_re_g, c_re_e], [c_im_g, c_im_e], label=str_blob_place, color=color_dist, linewidth = cs['vector_bw_blobs'])              #plot line between blobs centers
+    #     if zero_on_plot:
+    #         plt.plot([void_re,c_re_g], [void_im, c_im_g], color=color_g_vector, linewidth=cs['vector_state_lw'] )        #plot line from VOID to |g> blob
+    #         plt.plot([void_re,c_re_e], [void_im, c_im_e], color=color_e_vector, linewidth=cs['vector_state_lw'] )        #plot line from VOID to |e> blob
+    #         plt.plot([0, void_re], [0, void_im], color=color_zero_vector, linewidth=cs['vector_zero_lw'])      #plot line form [0,0] to VOID
+    #
+    #     plot_centers = False
+    #     plt.plot([ c_re_g ],[ c_im_g ], 'X', markersize=crosssize, color=color_g_mean, label='g-state: '+str_g_place, visible=plot_centers)  #this two needs only for legend color
+    #     plt.plot([ c_re_e ],[ c_im_e ], 'X', markersize=crosssize, color=color_e_mean, label='e-state: '+str_e_place, visible=plot_centers)
+    #
+    #     #### PLOT CROSSES AROUND EACH BLOB TO SHOW REAL SIZE ###################
+    #     ###remake it with one pair of plt.plot !V !V
+    #     plot_crosses = True
+    #     if plot_crosses:
+    #         if norm:
+    #             ### g blob in XY axes
+    #             if self.cross_g_xy is not None:
+    #                 [ax,ay,bx,by,cx,cy,dx,dy] = self.cross_g_xy
+    #                 plt.plot([ax,bx],[ay,by], color='b', lw=2)
+    #                 plt.plot([cx,dx],[cy,dy], color='b', lw=2)
+    #             ### e blolb in XY axes
+    #             if self.cross_e_xy is not None:
+    #                 [ax,ay,bx,by,cx,cy,dx,dy] = self.cross_e_xy
+    #                 plt.plot([ax,bx],[ay,by], color='r', lw=2)
+    #                 plt.plot([cx,dx],[cy,dy], color='r', lw=2)
+    #
+    #         else: ## if not nramalized
+    #
+    #             ### g blob in ReIm axes
+    #             if self.cross_g_reim is not None:
+    #                 [ax,ay,bx,by,cx,cy,dx,dy] = self.cross_g_reim
+    #                 plt.plot([ax,bx],[ay,by], color='b', lw=2)
+    #                 plt.plot([cx,dx],[cy,dy], color='b', lw=2)
+    #             ### e blolb in ReIm axes
+    #             if self.cross_e_reim is not None:
+    #                 [ax,ay,bx,by,cx,cy,dx,dy] = self.cross_e_reim
+    #                 plt.plot([ax,bx],[ay,by], color='r', lw=2)
+    #                 plt.plot([cx,dx],[cy,dy], color='r', lw=2)
+    #
+    #     ########################################################################
+    #
+    #     if zero_on_plot:
+    #         zero_label = 'Void zero: Re:'+ my_stround(void_re,5,withminus=True)+ '; Im:'+ my_stround(void_im,5,withminus=True) + '; 2*alpha='+ my_stround(angle_between_blobs,3,withminus=True)+ u"\u00b0"
+    #         plt.plot([void_re],[void_im],'+', label=zero_label, color=color_void )      #coordinats of no signal VOID (global)
+    #         plt.plot([0],[0],'+', color=color_zero )   #coordinats of 0 V
+    #
+    #     if font is not None:
+    #         leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='lower left', facecolor=legend_color,edgecolor=legend_frame_color, prop=font)
+    #     else:
+    #         leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='lower left', facecolor=legend_color,edgecolor=legend_frame_color)
+    #
+    #     for text in leg.get_texts():        #set color to legend text
+    #         # plt.setp(text, size = fontsize)
+    #         plt.setp(text, color = legend_text_color)
+    #
+    #
+    #     if font is not None:
+    #         for label in ax.get_xticklabels():  #set font to each xtick
+    #             label.set_fontproperties(font)
+    #         for label in ax.get_yticklabels():  #set font to each xtick
+    #             label.set_fontproperties(font)
+    #
+    #     if save:
+    #         import os
+    #
+    #         if not os.path.exists(savepath):
+    #             os.makedirs(savepath)
+    #         full_fname = savepath +'\\'+ fname + '.png'
+    #         plt.savefig(full_fname, transparent = fig_transp, facecolor=fig_face_color, edgecolor=fig_border_color, fontproperties = font)
+    #
+    #     if show:
+    #         plt.show()
+    #         return [fig, ax]
+    #     else:
+    #         plt.close()
+    #         return True
+
+    def plot_scatter_two_blob(self, norm=False, centers=None, save=False, figsize=[15,10], transpcy=100e-2,  fname='Two_blob', savepath='', fig_transp = True, show=True, limits=[None,None,None,None], crop=True, dark=True, title_str=None, font=None, zero_on_plot=False, pre_read=False):
         '''
         Plots diagramm of scattering for two blobs on the i-q plane
         returns limits of axis (it is used for histograms)
@@ -2160,90 +2508,19 @@ class SSResult:
         # fontproperties = font
         ### ##############T ###
 
-        #### custom colors #3
-        vector_bw_blobs = 0.7*lw
-        vector_state_lw = 0.7*lw
-        vector_zero_lw = 0.5*lw
-        markersize = markersize
-        crosssize = crosssize
-
+        ### set color_scheme (cs)
         if dark:
-            color_g = my_colors_dict['blob_g']
-            color_e = my_colors_dict['blob_e']
-              #None - by default
-                ### centers of clouds
-            # color_g_mean = '#795fd7'
-            color_g_mean = my_colors_dict['g_state_mark']
-            color_e_mean = my_colors_dict['e_state_mark']
-            color_dist =    my_colors_dict['deus_ex_gold']
-                ### vectors from void_point to centers
-            color_g_vector = my_colors_dict['deus_ex_gold']
-            color_e_vector = my_colors_dict['deus_ex_gold']
-                ### zero points
-            color_void = my_colors_dict['deus_ex_gold']
-            color_zero = my_colors_dict['meduza_gold']
-            color_zero_vector = my_colors_dict['meduza_gold']
-                ### background of image
-            fig_face_color = my_colors_dict['meduza_dark'] #this does not work
-            fig_border_color = 'r'
-            bg_color = 'k'
-            grid_color =  my_colors_dict['meduza_gold']
-            grid_transp = 0.5
-            title_color = my_colors_dict['meduza_gold']
-            legend_color = my_colors_dict['meduza_dark']
-            legend_text_color = my_colors_dict['meduza_gold']
-            legend_alpha = 0.7
-            legend_frame_color = my_colors_dict['meduza_gold']
-
-            AXES_COLOR = my_colors_dict['meduza_gold']
-                        import matplotlib as mpl
-            mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
-            mpl.rc('xtick', color=AXES_COLOR)
-            mpl.rc('ytick', color=AXES_COLOR)
-            mpl.rc('grid', color=AXES_COLOR)
+            cs = dark_scheme
         else:
-            color_g = 'b'
-            color_e = 'r'
-            color_g_mean = 'midnightblue'
-            color_e_mean = 'maroon'
-            frame_color = 'white'
-            bg_color = 'white'
-            grid_color = 'lightgrey'
-            color_dist = 'gold'
-            color_zero = 'k'
-            grid_transp=None
-            color_g = 'b'
-            color_e = 'r'
-                ### centers of clouds
-            # color_g_mean = '#795fd7'
-            color_g_mean = 'midnightblue'
-            color_e_mean = 'maroon'
-            color_dist = 'gold'
-                ### vectors from void_point to centers
-            color_g_vector = 'gold'
-            color_e_vector ='gold'
-                ### zero points
-            color_void = 'gold'
-            color_zero = 'k'
-            color_zero_vector = 'k'
-                ### background of image
-            fig_face_color = 'white' #this does not work
-            fig_border_color = 'r'
-            bg_color = 'white'
-            grid_color =  my_colors_dict['meduza_dark']
-            grid_transp = 0.5
-            title_color = 'k'
-            legend_color = 'white'
-            legend_text_color = 'k'
-            legend_alpha = 0.7
-            legend_frame_color = my_colors_dict['meduza_gold']
+            cs = bright_scheme
 
-            import matplotlib as mpl
-            AXES_COLOR = my_colors_dict['meduza_dark']
-            mpl.rc('axes', edgecolor=AXES_COLOR, labelcolor=AXES_COLOR, grid=True)
-            mpl.rc('xtick', color=AXES_COLOR)
-            mpl.rc('ytick', color=AXES_COLOR)
-            mpl.rc('grid', color=AXES_COLOR)
+        ### set colors of axes
+        import matplotlib as mpl
+        mpl.rc('axes', edgecolor=cs['AXES_COLOR'], labelcolor=cs['AXES_COLOR'], grid=True)
+        mpl.rc('xtick', color=cs['AXES_COLOR'])
+        mpl.rc('ytick', color=cs['AXES_COLOR'])
+        mpl.rc('grid', color=cs['AXES_COLOR'])
+
 
         if save:
             if savepath == '':
@@ -2299,7 +2576,7 @@ class SSResult:
             fname = fname + '_dark'
 
         if figsize is None:
-            fig = plt.figure(fname, facecolor=fig_face_color, edgecolor = fig_border_color)
+            fig = plt.figure(fname, facecolor=cs['fig_face_color'], edgecolor = cs['fig_border_color'])
         else:
             if (type(figsize) != list):
                 print 'figsize must be a lsit'
@@ -2308,11 +2585,11 @@ class SSResult:
                 if len(figsize) != 2:
                     print 'figsize list must contain to numbers (x and y size)'
                     return False
-            fig = plt.figure(fname, facecolor=fig_face_color, edgecolor = fig_border_color, figsize=(figsize[0],figsize[1]))
+            fig = plt.figure(fname, facecolor=cs['fig_face_color'], edgecolor = cs['fig_border_color'], figsize=(figsize[0],figsize[1]))
 
 
         ax = fig.add_subplot(1, 1, 1) # nrows, ncols, index
-        ax.set_facecolor(bg_color)
+        ax.set_facecolor(cs['bg_color'])
 
         if font is not None:
             plt.axis('equal',fontproperties = font)   #same step X and Y        #square axis automatic
@@ -2322,18 +2599,18 @@ class SSResult:
         plt.xlim( left = leftlim, right=rightlim )
         plt.ylim( top =  toplim, bottom=bottomlim )
 
-        plt.grid(color=grid_color, alpha= grid_transp)
+        plt.grid(color=cs['grid_color'], alpha= cs['grid_transp'])
 
         if title_str is None or title_str=='':
             if font is not None:
-                plt.title(self.timestamp, color=title_color,fontproperties = font)
+                plt.title(self.timestamp, color=cs['title_color'], fontproperties = font)
             else:
-                plt.title(self.timestamp, color=title_color)
+                plt.title(self.timestamp, color=cs['title_color'])
         else:
             if font is not None:
-                plt.title(title_str, color=title_color,fontproperties = font)
+                plt.title(title_str, color=cs['title_color'], fontproperties = font)
             else:
-                plt.title(title_str, color=title_color)
+                plt.title(title_str, color=cs['title_color'])
 
         if self.CONVERT_TOMV:
             lab_units = '[mV]'
@@ -2347,12 +2624,12 @@ class SSResult:
             plt.xlabel('Re '+lab_units)
             plt.ylabel('Im '+lab_units)
 
-        plt.scatter(re_e, im_e, color=color_e, alpha=transpcy, s=markersize)
-        plt.scatter(re_g, im_g, color=color_g, alpha=transpcy, s=markersize)
+        plt.scatter(re_e, im_e, color=cs['blob_e'], alpha=transpcy, s=cs['point_scatter_size'])
+        plt.scatter(re_g, im_g, color=cs['blob_g'], alpha=transpcy, s=cs['point_scatter_size'])
 
         if pre_read:
             if not norm:
-                plt.scatter(re_g_pre, im_g_pre, color='g', alpha=transpcy, s=markersize)
+                plt.scatter(re_g_pre, im_g_pre, color=cs['blob_prepulse'], alpha=transpcy, s=cs['point_scatter_size'])
 
         ### fake plot just for string in legend
         plt.plot([],[], label = str_params, visible=False)
@@ -2360,15 +2637,15 @@ class SSResult:
 
 
         ### real plots
-        plt.plot([c_re_g, c_re_e], [c_im_g, c_im_e], label=str_blob_place, color=color_dist, linewidth = vector_bw_blobs)              #plot line between blobs centers
+        plt.plot([c_re_g, c_re_e], [c_im_g, c_im_e], label=str_blob_place, color=cs['color_dist'], linewidth = cs['vector_bw_blobs'] )              #plot line between blobs centers
         if zero_on_plot:
-            plt.plot([void_re,c_re_g], [void_im, c_im_g], color=color_g_vector, linewidth=vector_state_lw)        #plot line from VOID to |g> blob
-            plt.plot([void_re,c_re_e], [void_im, c_im_e], color=color_e_vector, linewidth=vector_state_lw)        #plot line from VOID to |e> blob
-            plt.plot([0, void_re], [0, void_im], color=color_zero_vector, linewidth=vector_zero_lw)      #plot line form [0,0] to VOID
+            plt.plot([void_re,c_re_g], [void_im, c_im_g], color=cs['color_g_vector'], linewidth=cs['vector_state_lw'])        #plot line from VOID to |g> blob
+            plt.plot([void_re,c_re_e], [void_im, c_im_e], color=cs['color_e_vector'], linewidth=cs['vector_state_lw'])        #plot line from VOID to |e> blob
+            plt.plot([0, void_re], [0, void_im], color=cs['color_zero_vector'], linewidth=cs['vector_zero_lw'])      #plot line form [0,0] to VOID
 
         plot_centers = False
-        plt.plot([ c_re_g ],[ c_im_g ], 'X', markersize=crosssize, color=color_g_mean, label='g-state: '+str_g_place, visible=plot_centers)  #this two needs only for legend color
-        plt.plot([ c_re_e ],[ c_im_e ], 'X', markersize=crosssize, color=color_e_mean, label='e-state: '+str_e_place, visible=plot_centers)
+        plt.plot([ c_re_g ],[ c_im_g ], 'X', markersize=cs['onplot_mark_size'], color=cs['color_g_mean'], label='g-state: '+str_g_place, visible=plot_centers)  #this two needs only for legend color
+        plt.plot([ c_re_e ],[ c_im_e ], 'X', markersize=cs['onplot_mark_size'], color=cs['color_e_mean'], label='e-state: '+str_e_place, visible=plot_centers)
 
         #### PLOT CROSSES AROUND EACH BLOB TO SHOW REAL SIZE ###################
         ###remake it with one pair of plt.plot !V !V
@@ -2378,42 +2655,42 @@ class SSResult:
                 ### g blob in XY axes
                 if self.cross_g_xy is not None:
                     [ax,ay,bx,by,cx,cy,dx,dy] = self.cross_g_xy
-                    plt.plot([ax,bx],[ay,by], color='b', lw=2)
-                    plt.plot([cx,dx],[cy,dy], color='b', lw=2)
+                    plt.plot([ax,bx],[ay,by], color=cs['color_g_cross'], lw=cs['lw_cross'])
+                    plt.plot([cx,dx],[cy,dy], color=cs['color_g_cross'], lw=cs['lw_cross'])
                 ### e blolb in XY axes
                 if self.cross_e_xy is not None:
                     [ax,ay,bx,by,cx,cy,dx,dy] = self.cross_e_xy
-                    plt.plot([ax,bx],[ay,by], color='r', lw=2)
-                    plt.plot([cx,dx],[cy,dy], color='r', lw=2)
+                    plt.plot([ax,bx],[ay,by], color=cs['color_e_cross'], lw=cs['lw_cross'])
+                    plt.plot([cx,dx],[cy,dy], color=cs['color_e_cross'], lw=cs['lw_cross'])
 
             else: ## if not nramalized
 
                 ### g blob in ReIm axes
                 if self.cross_g_reim is not None:
                     [ax,ay,bx,by,cx,cy,dx,dy] = self.cross_g_reim
-                    plt.plot([ax,bx],[ay,by], color='b', lw=2)
-                    plt.plot([cx,dx],[cy,dy], color='b', lw=2)
+                    plt.plot([ax,bx],[ay,by], color=cs['color_g_cross'], lw=cs['lw_cross'])
+                    plt.plot([cx,dx],[cy,dy], color=cs['color_g_cross'], lw=cs['lw_cross'])
                 ### e blolb in ReIm axes
                 if self.cross_e_reim is not None:
                     [ax,ay,bx,by,cx,cy,dx,dy] = self.cross_e_reim
-                    plt.plot([ax,bx],[ay,by], color='r', lw=2)
-                    plt.plot([cx,dx],[cy,dy], color='r', lw=2)
+                    plt.plot([ax,bx],[ay,by], color=cs['color_e_cross'], lw=cs['lw_cross'])
+                    plt.plot([cx,dx],[cy,dy], color=cs['color_e_cross'], lw=cs['lw_cross'])
 
         ########################################################################
 
         if zero_on_plot:
             zero_label = 'Void zero: Re:'+ my_stround(void_re,5,withminus=True)+ '; Im:'+ my_stround(void_im,5,withminus=True) + '; 2*alpha='+ my_stround(angle_between_blobs,3,withminus=True)+ u"\u00b0"
-            plt.plot([void_re],[void_im],'+', label=zero_label, color=color_void )      #coordinats of no signal VOID (global)
-            plt.plot([0],[0],'+', color=color_zero )   #coordinats of 0 V
+            plt.plot([void_re],[void_im],'+', label=zero_label, color=cs['color_void'], markersize=cs['onplot_mark_size'] )      #coordinats of no signal VOID (global)
+            plt.plot([0],[0],'+', color=cs['color_zero'], markersize=cs['onplot_mark_size'] )   #coordinats of 0 V
 
         if font is not None:
-            leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='lower left', facecolor=legend_color,edgecolor=legend_frame_color, prop=font)
+            leg = plt.legend(fancybox=True, framealpha=cs['legend_alpha'], loc='lower left', facecolor=cs['legend_color'], edgecolor=cs['legend_frame_color'], prop=font)
         else:
-            leg = plt.legend(fancybox=True, framealpha=legend_alpha, loc='lower left', facecolor=legend_color,edgecolor=legend_frame_color)
+            leg = plt.legend(fancybox=True, framealpha=cs['legend_alpha'], loc='lower left', facecolor=cs['legend_color'],edgecolor=cs['legend_frame_color'])
 
         for text in leg.get_texts():        #set color to legend text
             # plt.setp(text, size = fontsize)
-            plt.setp(text, color = legend_text_color)
+            plt.setp(text, color = cs['legend_text_color'])
 
 
         if font is not None:
@@ -2428,7 +2705,7 @@ class SSResult:
             if not os.path.exists(savepath):
                 os.makedirs(savepath)
             full_fname = savepath +'\\'+ fname + '.png'
-            plt.savefig(full_fname, transparent = fig_transp, facecolor=fig_face_color, edgecolor=fig_border_color, fontproperties = font)
+            plt.savefig(full_fname, transparent = fig_transp, facecolor=cs['fig_face_color'], edgecolor=cs['fig_border_color'], fontproperties = font)
 
         if show:
             plt.show()
@@ -2437,7 +2714,8 @@ class SSResult:
             plt.close()
             return True
 
-    def plot_hists(self, regime='raw_data', dark=True, log=True, save=False, figsize=[15,10], savepath='', fname='Hists', lw=1, fig_transp=False, title_str='', font=None, show=False, limits=[None,None]):
+
+    def plot_hists(self, regime='raw_data', dark=True, log=True, save=False, figsize=[15,10], savepath='', fname='Hists', lw=1, fig_transp=False, title_str='', font=None, show=True, limits=[None,None]):
         '''
         function of plot histograms of object is it exists
         have different regimes:
@@ -2451,6 +2729,11 @@ class SSResult:
         ###############################################
 
         ### STYLE
+        if dark:
+            cs = dark_scheme
+        else:
+            cs = bright_scheme
+
         if dark:
             fname = fname + '_dark'
             color_g = my_colors_dict['blob_g']
@@ -2757,7 +3040,7 @@ class SSResult:
             plt.close()
             return True
 
-    def plot_hists_y(self, dark=True, log=True, save=False, figsize=[15,10], savepath='', fname='Hists_Y', lw=1, fig_transp=False, title_str='', font=None, show=False, limits=[None,None]):
+    def plot_hists_y(self, dark=True, log=True, save=False, figsize=[15,10], savepath='', fname='Hists_Y', lw=1, fig_transp=False, title_str='', font=None, show=True, limits=[None,None]):
         '''
         function of plot histograms of object is it exists
         have different regimes:
@@ -2984,7 +3267,7 @@ class SSResult:
             return True
 
 
-    def plot_hists_unitless(self, regime='raw_and_selected', dark=True, log=True, save=False, figsize=[15,10], savepath='', fname='Hists_unitless', lw=1, fig_transp=False, title_str='', font=None, show=False, limits=[None,None]):
+    def plot_hists_unitless(self, regime='raw_and_selected', dark=True, log=True, save=False, figsize=[15,10], savepath='', fname='Hists_unitless', lw=1, fig_transp=False, title_str='', font=None, show=True, limits=[None,None]):
         '''
         function of plot histograms of object is it exists
         have different regimes:
